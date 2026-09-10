@@ -1,0 +1,495 @@
+/* =================================
+   SETTINGS
+   PREMIUM CONTROL CENTER UI
+================================= */
+
+.settings-page {
+  min-height: calc(100vh - 80px);
+  padding: 32px;
+
+  color: #1e72c7;
+
+  background:
+    radial-gradient(
+      circle at 85% 5%,
+      rgba(99, 102, 241, 0.12),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 5% 80%,
+      rgba(14, 165, 233, 0.08),
+      transparent 30%
+    );
+}
+
+/* =================================
+   HEADER
+================================= */
+
+.settings-page .page-header {
+  margin-bottom: 32px;
+}
+
+.settings-page .page-header h1 {
+  margin: 0;
+
+  color: #043a24;
+
+  font-size: 34px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+}
+
+.settings-page .page-header p {
+  margin: 8px 0 0;
+
+  color: #000000;
+
+  font-size: 14px;
+}
+
+/* =================================
+   MAIN CARD
+================================= */
+
+.settings-card {
+  position: relative;
+
+  max-width: 1000px;
+
+  margin-bottom: 20px;
+  padding: 0;
+
+  background: rgba(11, 18, 32, 0.82);
+
+  border: 1px solid rgba(148, 163, 184, 0.10);
+  border-radius: 20px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 15px 45px rgba(0, 0, 0, 0.20);
+
+  backdrop-filter: blur(20px);
+}
+
+/* =================================
+   CARD TITLE AREA
+================================= */
+
+.settings-card h2 {
+  margin: 0;
+
+  padding: 23px 26px 5px;
+
+  color: #ffffff;
+
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.settings-description {
+  margin: 0;
+
+  padding: 0 26px 20px;
+
+  color: #78869a;
+
+  font-size: 12px;
+}
+
+/* =================================
+   ACCOUNT SECTION
+================================= */
+
+.settings-card:first-of-type {
+  background:
+    linear-gradient(
+      120deg,
+      rgba(20, 30, 50, 0.90),
+      rgba(10, 17, 30, 0.82)
+    );
+}
+
+/* =================================
+   ACCOUNT ROW
+================================= */
+
+.settings-row {
+  position: relative;
+
+  min-height: 78px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 16px 26px;
+
+  border-top: 1px solid rgba(148, 163, 184, 0.07);
+
+  transition:
+    background 0.2s ease,
+    padding-left 0.2s ease;
+}
+
+.settings-row:hover {
+  background: rgba(59, 130, 246, 0.035);
+
+  padding-left: 30px;
+}
+
+.settings-row > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+/* =================================
+   FIELD LABEL
+================================= */
+
+.settings-row strong {
+  color: #dbe4ef;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+/* =================================
+   FIELD VALUE
+================================= */
+
+.settings-row > div > span {
+  color: #f1f5f9;
+
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* =================================
+   NAME SPECIAL INDICATOR
+================================= */
+
+.settings-card:first-of-type
+.settings-row:first-of-type::before {
+  content: "A";
+
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 18px;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #7c3aed
+    );
+
+  border-radius: 11px;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  box-shadow:
+    0 7px 20px rgba(59, 130, 246, 0.20);
+}
+
+.settings-card:first-of-type
+.settings-row:first-of-type {
+  padding-left: 26px;
+}
+
+.settings-card:first-of-type
+.settings-row:first-of-type > div {
+  margin-right: auto;
+}
+
+/* =================================
+   EMAIL ICON EFFECT
+================================= */
+
+.settings-card:first-of-type
+.settings-row:nth-of-type(2)::before {
+  content: "✉";
+
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 18px;
+
+  color: #93c5fd;
+
+  background: rgba(37, 99, 235, 0.10);
+
+  border: 1px solid rgba(96, 165, 250, 0.12);
+
+  border-radius: 11px;
+
+  font-size: 14px;
+}
+
+.settings-card:first-of-type
+.settings-row:nth-of-type(2) > div {
+  margin-right: auto;
+}
+
+/* =================================
+   SECURITY
+================================= */
+
+.settings-card:nth-of-type(2) {
+  border-color: rgba(99, 102, 241, 0.13);
+}
+
+.settings-card:nth-of-type(2) .settings-row {
+  min-height: 88px;
+}
+
+/* =================================
+   SECURITY STATUS
+================================= */
+
+.security-badge {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 8px 13px;
+
+  color: #86efac !important;
+
+  background: rgba(34, 197, 94, 0.08);
+
+  border: 1px solid rgba(74, 222, 128, 0.16);
+
+  border-radius: 999px;
+
+  font-size: 11px !important;
+  font-weight: 650;
+
+  letter-spacing: 0.2px;
+}
+
+.security-badge::before {
+  content: "";
+
+  width: 6px;
+  height: 6px;
+
+  background: #4ade80;
+
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 10px rgba(74, 222, 128, 0.7);
+}
+
+/* =================================
+   SECURITY ROW ICON
+================================= */
+
+.settings-card:nth-of-type(2)
+.settings-row::before {
+  content: "✓";
+
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 18px;
+
+  color: #a5b4fc;
+
+  background: rgba(99, 102, 241, 0.10);
+
+  border: 1px solid rgba(129, 140, 248, 0.14);
+
+  border-radius: 11px;
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.settings-card:nth-of-type(2)
+.settings-row > div {
+  margin-right: auto;
+}
+
+/* =================================
+   LOGOUT / DANGER ZONE
+================================= */
+
+.settings-card.danger-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  padding: 22px 26px;
+
+  background:
+    linear-gradient(
+      110deg,
+      rgba(45, 15, 22, 0.48),
+      rgba(15, 17, 27, 0.82)
+    );
+
+  border-color: rgba(248, 113, 113, 0.13);
+}
+
+.settings-card.danger-card h2 {
+  padding: 0 0 5px;
+
+  color: #fca5a5;
+}
+
+.settings-card.danger-card
+.settings-description {
+  padding: 0;
+
+  margin: 0;
+}
+
+/* =================================
+   LOGOUT CONTENT WRAPPER
+================================= */
+
+.settings-card.danger-card::before {
+  content: "⚠";
+
+  width: 42px;
+  height: 42px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #fca5a5;
+
+  background: rgba(239, 68, 68, 0.08);
+
+  border: 1px solid rgba(248, 113, 113, 0.13);
+
+  border-radius: 12px;
+
+  font-size: 17px;
+}
+
+/* =================================
+   LOGOUT BUTTON
+================================= */
+
+.settings-logout-btn {
+  flex-shrink: 0;
+
+  height: 42px;
+
+  padding: 0 19px;
+
+  color: #fecaca;
+
+  background: rgba(127, 29, 29, 0.15);
+
+  border: 1px solid rgba(248, 113, 113, 0.20);
+
+  border-radius: 10px;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.settings-logout-btn:hover {
+  transform: translateY(-2px);
+
+  color: #ffffff;
+
+  background: rgba(185, 28, 28, 0.28);
+
+  border-color: rgba(248, 113, 113, 0.38);
+
+  box-shadow:
+    0 8px 22px rgba(127, 29, 29, 0.18);
+}
+
+.settings-logout-btn:active {
+  transform: translateY(0);
+}
+
+/* =================================
+   RESPONSIVE
+================================= */
+
+@media (max-width: 700px) {
+  .settings-page {
+    padding: 20px;
+  }
+
+  .settings-page .page-header h1 {
+    font-size: 28px;
+  }
+
+  .settings-row {
+    min-height: 72px;
+    padding: 15px 20px;
+  }
+
+  .settings-row:hover {
+    padding-left: 20px;
+  }
+
+  .settings-card h2 {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .settings-description {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .settings-card.danger-card {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 22px 20px;
+  }
+
+  .settings-card.danger-card::before {
+    display: none;
+  }
+
+  .settings-logout-btn {
+    width: 100%;
+  }
+}
