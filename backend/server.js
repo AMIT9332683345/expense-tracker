@@ -12,6 +12,9 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
+
 
 // ========================================
 // MongoDB
@@ -34,6 +37,15 @@ app.get("/", (req, res) => {
     message: "Expense Tracker API is running"
   });
 });
+
+
+
+// ========================================
+// Swagger
+// ========================================
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
 
 // ========================================
 // API Routes
