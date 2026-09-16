@@ -35,146 +35,217 @@ const generateOtp = () => {
 // ======================================================
 
 const sendOtpEmail = async (email, otp, name) => {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is missing");
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.EMAIL_FROM;
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is missing on Render");
   }
 
-  if (!process.env.EMAIL_FROM) {
-    throw new Error("EMAIL_FROM is missing");
+  if (!fromEmail) {
+    throw new Error("EMAIL_FROM is missing on Render");
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
+  console.log("======================================");
+  console.log("RESEND OTP EMAIL");
+  console.log("To:", email);
+  console.log("From:", fromEmail);
+  console.log("API KEY EXISTS:", !!apiKey);
+  console.log("======================================");
 
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json"
-    },
+  const emailData = {
+    from: fromEmail,
+    to: [email],
+    subject: "Your Expense Tracker Password Reset OTP",
 
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM,
-      to: [email],
-      subject: "Your Expense Tracker Password Reset OTP",
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset OTP</title>
+      </head>
 
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Password Reset OTP</title>
-        </head>
+      <body style="
+        margin:0;
+        padding:0;
+        background:#f4f7fb;
+        font-family:Arial,Helvetica,sans-serif;
+      ">
 
-        <body style="
-          margin:0;
-          padding:0;
-          background:#f4f7fb;
-          font-family:Arial,Helvetica,sans-serif;
+        <div style="
+          max-width:600px;
+          margin:40px auto;
+          background:#ffffff;
+          border-radius:12px;
+          overflow:hidden;
+          box-shadow:0 5px 20px rgba(0,0,0,0.08);
         ">
 
           <div style="
-            max-width:600px;
-            margin:40px auto;
-            background:#ffffff;
-            border-radius:12px;
-            overflow:hidden;
-            box-shadow:0 5px 20px rgba(0,0,0,0.08);
+            background:#111827;
+            color:white;
+            padding:25px;
+            text-align:center;
           ">
-
-            <div style="
-              background:#111827;
-              color:white;
-              padding:25px;
-              text-align:center;
-            ">
-              <h1 style="margin:0;">
-                Expense Tracker
-              </h1>
-            </div>
-
-            <div style="padding:35px;">
-
-              <h2 style="color:#111827;">
-                Password Reset
-              </h2>
-
-              <p style="color:#4b5563;">
-                Hello ${name || "User"},
-              </p>
-
-              <p style="color:#4b5563;">
-                We received a request to reset your Expense Tracker
-                account password.
-              </p>
-
-              <p style="color:#4b5563;">
-                Your One-Time Password (OTP) is:
-              </p>
-
-              <div style="
-                margin:25px 0;
-                padding:20px;
-                background:#f3f4f6;
-                border-radius:10px;
-                text-align:center;
-              ">
-
-                <span style="
-                  font-size:36px;
-                  font-weight:bold;
-                  letter-spacing:10px;
-                  color:#111827;
-                ">
-                  ${otp}
-                </span>
-
-              </div>
-
-              <p style="color:#6b7280;">
-                This OTP will expire in <strong>10 minutes</strong>.
-              </p>
-
-              <p style="color:#6b7280;">
-                If you did not request a password reset, you can safely
-                ignore this email.
-              </p>
-
-              <hr style="
-                border:none;
-                border-top:1px solid #e5e7eb;
-                margin:30px 0;
-              ">
-
-              <p style="
-                color:#9ca3af;
-                font-size:12px;
-                text-align:center;
-              ">
-                This is an automated email. Please do not reply.
-              </p>
-
-            </div>
+            <h1 style="margin:0;">
+              Expense Tracker
+            </h1>
           </div>
 
-        </body>
-        </html>
-      `
-    })
-  });
+          <div style="padding:35px;">
 
-  const data = await response.json();
+            <h2 style="color:#111827;">
+              Password Reset
+            </h2>
 
-  if (!response.ok) {
-    console.error("RESEND ERROR:", data);
+            <p style="color:#4b5563;">
+              Hello ${name || "User"},
+            </p>
 
-    throw new Error(
-      data?.message || "Failed to send OTP email"
+            <p style="color:#4b5563;">
+              We received a request to reset your Expense Tracker
+              account password.
+            </p>
+
+            <p style="color:#4b5563;">
+              Your One-Time Password (OTP) is:
+            </p>
+
+            <div style="
+              margin:25px 0;
+              padding:20px;
+              background:#f3f4f6;
+              border-radius:10px;
+              text-align:center;
+            ">
+
+              <span style="
+                font-size:36px;
+                font-weight:bold;
+                letter-spacing:10px;
+                color:#111827;
+              ">
+                ${otp}
+              </span>
+
+            </div>
+
+            <p style="color:#6b7280;">
+              This OTP will expire in
+              <strong>10 minutes</strong>.
+            </p>
+
+            <p style="color:#6b7280;">
+              If you did not request a password reset,
+              you can safely ignore this email.
+            </p>
+
+            <hr style="
+              border:none;
+              border-top:1px solid #e5e7eb;
+              margin:30px 0;
+            ">
+
+            <p style="
+              color:#9ca3af;
+              font-size:12px;
+              text-align:center;
+            ">
+              This is an automated email.
+              Please do not reply.
+            </p>
+
+          </div>
+        </div>
+
+      </body>
+      </html>
+    `
+  };
+
+  try {
+    const response = await fetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify(emailData)
+      }
     );
+
+    const rawText = await response.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = {
+        raw: rawText
+      };
+    }
+
+    console.log("RESEND HTTP STATUS:", response.status);
+    console.log("RESEND RESPONSE:", data);
+
+    if (!response.ok) {
+      const errorMessage =
+        data?.message ||
+        data?.error ||
+        data?.name ||
+        data?.raw ||
+        `Resend API returned HTTP ${response.status}`;
+
+      throw new Error(
+        `Resend API error: ${errorMessage}`
+      );
+    }
+
+    if (!data?.id) {
+      throw new Error(
+        "Resend accepted the request but returned no email ID"
+      );
+    }
+
+    console.log(
+      "OTP EMAIL SENT SUCCESSFULLY:",
+      data.id
+    );
+
+    return data;
+
+  } catch (error) {
+    console.error(
+      "======================================"
+    );
+
+    console.error(
+      "RESEND EMAIL FAILED"
+    );
+
+    console.error(
+      "Error name:",
+      error.name
+    );
+
+    console.error(
+      "Error message:",
+      error.message
+    );
+
+    console.error(
+      "======================================"
+    );
+
+    throw error;
   }
-
-  console.log("OTP EMAIL SENT:", data.id);
-
-  return data;
 };
 
 // ======================================================
@@ -183,19 +254,33 @@ const sendOtpEmail = async (email, otp, name) => {
 
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const {
+      name,
+      email,
+      password
+    } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
-        message: "Name, email and password are required"
+        message:
+          "Name, email and password are required"
       });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    if (password.length < 6) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 6 characters long"
+      });
+    }
 
-    const existingUser = await User.findOne({
-      email: normalizedEmail
-    });
+    const normalizedEmail =
+      email.trim().toLowerCase();
+
+    const existingUser =
+      await User.findOne({
+        email: normalizedEmail
+      });
 
     if (existingUser) {
       return res.status(400).json({
@@ -203,7 +288,8 @@ const register = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword =
+      await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name: name.trim(),
@@ -214,8 +300,11 @@ const register = async (req, res) => {
     const token = generateToken(user);
 
     return res.status(201).json({
-      message: "Registration successful",
+      message:
+        "Registration successful",
+
       token,
+
       user: {
         id: user._id,
         name: user.name,
@@ -224,11 +313,17 @@ const register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
+    console.error(
+      "REGISTER ERROR:",
+      error
+    );
 
     return res.status(500).json({
-      message: "Registration failed",
-      error: error.message
+      message:
+        "Registration failed",
+
+      error:
+        error.message
     });
   }
 };
@@ -239,23 +334,30 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {
+      email,
+      password
+    } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
-        message: "Email and password are required"
+        message:
+          "Email and password are required"
       });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail =
+      email.trim().toLowerCase();
 
-    const user = await User.findOne({
-      email: normalizedEmail
-    });
+    const user =
+      await User.findOne({
+        email: normalizedEmail
+      });
 
     if (!user) {
       return res.status(401).json({
-        message: "Invalid email or password"
+        message:
+          "Invalid email or password"
       });
     }
 
@@ -266,22 +368,28 @@ const login = async (req, res) => {
       });
     }
 
-    const passwordMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const passwordMatch =
+      await bcrypt.compare(
+        password,
+        user.password
+      );
 
     if (!passwordMatch) {
       return res.status(401).json({
-        message: "Invalid email or password"
+        message:
+          "Invalid email or password"
       });
     }
 
-    const token = generateToken(user);
+    const token =
+      generateToken(user);
 
     return res.json({
-      message: "Login successful",
+      message:
+        "Login successful",
+
       token,
+
       user: {
         id: user._id,
         name: user.name,
@@ -290,11 +398,17 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
+    console.error(
+      "LOGIN ERROR:",
+      error
+    );
 
     return res.status(500).json({
-      message: "Login failed",
-      error: error.message
+      message:
+        "Login failed",
+
+      error:
+        error.message
     });
   }
 };
@@ -309,17 +423,24 @@ const forgotPassword = async (req, res) => {
 
     if (!email) {
       return res.status(400).json({
-        message: "Email is required"
+        message:
+          "Email is required"
       });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail =
+      email.trim().toLowerCase();
 
-    const user = await User.findOne({
-      email: normalizedEmail
-    });
+    console.log(
+      "FORGOT PASSWORD REQUEST:",
+      normalizedEmail
+    );
 
-    // Don't reveal whether an email exists
+    const user =
+      await User.findOne({
+        email: normalizedEmail
+      });
+
     if (!user) {
       return res.json({
         message:
@@ -327,57 +448,77 @@ const forgotPassword = async (req, res) => {
       });
     }
 
-    const otp = generateOtp();
+    const otp =
+      generateOtp();
 
-    const expiresAt = new Date(
-      Date.now() + 10 * 60 * 1000
-    );
+    const expiresAt =
+      new Date(
+        Date.now() +
+        10 * 60 * 1000
+      );
 
     user.resetOtp = otp;
-    user.resetOtpExpires = expiresAt;
+    user.resetOtpExpires =
+      expiresAt;
+
     user.resetOtpAttempts = 0;
 
     await user.save();
 
+    console.log(
+      "OTP GENERATED FOR:",
+      normalizedEmail
+    );
+
     try {
+
       await sendOtpEmail(
         normalizedEmail,
         otp,
         user.name
       );
+
     } catch (emailError) {
-
-      // Remove OTP if email failed
-      user.resetOtp = null;
-      user.resetOtpExpires = null;
-      user.resetOtpAttempts = 0;
-
-      await user.save();
 
       console.error(
         "OTP EMAIL ERROR:",
         emailError
       );
 
+      // Remove OTP because email failed
+      user.resetOtp = null;
+      user.resetOtpExpires = null;
+      user.resetOtpAttempts = 0;
+
+      await user.save();
+
       return res.status(500).json({
-        message: "Unable to send OTP email",
-        error: emailError.message
+        message:
+          "Unable to send OTP email",
+
+        error:
+          emailError.message
       });
     }
 
     return res.json({
-      message: "OTP sent successfully"
+      message:
+        "OTP sent successfully"
     });
 
   } catch (error) {
+
     console.error(
       "FORGOT PASSWORD ERROR:",
       error
     );
 
     return res.status(500).json({
-      message: "Failed to process password reset",
-      error: error.message
+      message:
+        "Failed to process password reset",
+
+      error:
+        error.message
     });
   }
 };
@@ -388,6 +529,7 @@ const forgotPassword = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   try {
+
     const {
       email,
       otp,
@@ -395,48 +537,66 @@ const resetPassword = async (req, res) => {
       newPassword
     } = req.body;
 
-    const finalPassword = newPassword || password;
+    const finalPassword =
+      newPassword || password;
 
-    if (!email || !otp || !finalPassword) {
+    if (
+      !email ||
+      !otp ||
+      !finalPassword
+    ) {
       return res.status(400).json({
         message:
           "Email, OTP and new password are required"
       });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-
-    const user = await User.findOne({
-      email: normalizedEmail
-    });
-
-    if (!user) {
+    if (finalPassword.length < 6) {
       return res.status(400).json({
-        message: "Invalid OTP or email"
+        message:
+          "Password must be at least 6 characters long"
       });
     }
 
-    // Check attempts
-    if ((user.resetOtpAttempts || 0) >= 5) {
+    const normalizedEmail =
+      email.trim().toLowerCase();
+
+    const user =
+      await User.findOne({
+        email: normalizedEmail
+      });
+
+    if (!user) {
+      return res.status(400).json({
+        message:
+          "Invalid OTP or email"
+      });
+    }
+
+    if (
+      (user.resetOtpAttempts || 0) >= 5
+    ) {
       return res.status(429).json({
         message:
           "Too many OTP attempts. Please request a new OTP."
       });
     }
 
-    // Check OTP exists
-    if (!user.resetOtp || !user.resetOtpExpires) {
+    if (
+      !user.resetOtp ||
+      !user.resetOtpExpires
+    ) {
       return res.status(400).json({
         message:
           "OTP is invalid or has expired. Please request a new OTP."
       });
     }
 
-    // Check expiry
     if (
       new Date() >
       new Date(user.resetOtpExpires)
     ) {
+
       user.resetOtp = null;
       user.resetOtpExpires = null;
       user.resetOtpAttempts = 0;
@@ -449,35 +609,31 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // Increment attempt
     user.resetOtpAttempts =
       (user.resetOtpAttempts || 0) + 1;
 
-    // Check OTP
-    if (String(user.resetOtp) !== String(otp)) {
+    if (
+      String(user.resetOtp) !==
+      String(otp).trim()
+    ) {
+
       await user.save();
 
       return res.status(400).json({
-        message: "Invalid OTP"
-      });
-    }
-
-    // Validate password
-    if (finalPassword.length < 6) {
-      return res.status(400).json({
         message:
-          "Password must be at least 6 characters long"
+          "Invalid OTP"
       });
     }
 
-    const hashedPassword = await bcrypt.hash(
-      finalPassword,
-      10
-    );
+    const hashedPassword =
+      await bcrypt.hash(
+        finalPassword,
+        10
+      );
 
-    user.password = hashedPassword;
+    user.password =
+      hashedPassword;
 
-    // Clear OTP
     user.resetOtp = null;
     user.resetOtpExpires = null;
     user.resetOtpAttempts = 0;
@@ -490,14 +646,18 @@ const resetPassword = async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(
       "RESET PASSWORD ERROR:",
       error
     );
 
     return res.status(500).json({
-      message: "Password reset failed",
-      error: error.message
+      message:
+        "Password reset failed",
+
+      error:
+        error.message
     });
   }
 };
@@ -508,11 +668,15 @@ const resetPassword = async (req, res) => {
 
 const googleLogin = async (req, res) => {
   try {
-    const { credential } = req.body;
+
+    const {
+      credential
+    } = req.body;
 
     if (!credential) {
       return res.status(400).json({
-        message: "Google credential is required"
+        message:
+          "Google credential is required"
       });
     }
 
@@ -526,15 +690,18 @@ const googleLogin = async (req, res) => {
     const ticket =
       await googleClient.verifyIdToken({
         idToken: credential,
+
         audience:
           process.env.GOOGLE_CLIENT_ID
       });
 
-    const payload = ticket.getPayload();
+    const payload =
+      ticket.getPayload();
 
     if (!payload) {
       return res.status(401).json({
-        message: "Invalid Google credential"
+        message:
+          "Invalid Google credential"
       });
     }
 
@@ -554,32 +721,43 @@ const googleLogin = async (req, res) => {
     const normalizedEmail =
       email.trim().toLowerCase();
 
-    let user = await User.findOne({
-      email: normalizedEmail
-    });
+    let user =
+      await User.findOne({
+        email: normalizedEmail
+      });
 
     if (!user) {
 
-      user = await User.create({
-        name: name || "Google User",
-        email: normalizedEmail,
-        googleId,
-        password: undefined
-      });
+      user =
+        await User.create({
+          name:
+            name || "Google User",
+
+          email:
+            normalizedEmail,
+
+          googleId
+        });
 
     } else {
 
       if (!user.googleId) {
-        user.googleId = googleId;
+        user.googleId =
+          googleId;
+
         await user.save();
       }
     }
 
-    const token = generateToken(user);
+    const token =
+      generateToken(user);
 
     return res.json({
-      message: "Google login successful",
+      message:
+        "Google login successful",
+
       token,
+
       user: {
         id: user._id,
         name: user.name,
@@ -588,14 +766,18 @@ const googleLogin = async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(
       "GOOGLE LOGIN ERROR:",
       error
     );
 
     return res.status(401).json({
-      message: "Google login failed",
-      error: error.message
+      message:
+        "Google login failed",
+
+      error:
+        error.message
     });
   }
 };
