@@ -1,0 +1,13 @@
+{
+    "workbench.editor.autoLockGroups": {
+        "chatgpt.conversationEditor": true,
+        "workbench.editor.chatDebug": true,
+        "default": true,
+        "workbench.editor.chatSession": true,
+        "workbench.editorinputs.searchEditorInput": true,
+        "jupyter-notebook": true,
+        "jsProfileVisualizer.cpuprofile.table": true,
+        "gitlens.rebase": true
+    },
+    "workbench.editor.alwaysShowEditorActions": false
+}

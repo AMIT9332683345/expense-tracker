@@ -129,7 +129,9 @@ function App() {
       />
 
       <main className="main-content">
-        <Navbar activePage={activePage} />
+        <Navbar activePage={activePage}
+        onLogout={handleLogout}
+         />
 
         <div className="app-ui-transition">
           {renderPage()}
