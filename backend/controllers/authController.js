@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const crypto = require("crypto");
 
-const User = require("../models/User");
+const User = require("../models/user");
 
 const googleClient = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID
