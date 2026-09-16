@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
-const User = require("../models/User");
+const User = require("../models/user");
 
 // ============================================================
 // SMTP CONFIGURATION
