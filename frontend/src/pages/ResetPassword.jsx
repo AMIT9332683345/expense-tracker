@@ -3,32 +3,94 @@ import { resetPassword } from "../services/api";
 import "./ResetPassword.css";
 
 function ResetPassword() {
+  const [step, setStep] = useState(1);
+
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  // ======================================================
+  // SEND OTP
+  // ======================================================
+
+  const sendOtp = async (e) => {
     e.preventDefault();
 
     setError("");
     setMessage("");
 
-    // Email validation
     if (!email.trim()) {
       setError("Please enter your email address.");
       return;
     }
 
-    // OTP validation
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        `${
+          process.env.REACT_APP_API_URL ||
+          process.env.VITE_API_URL ||
+          "http://localhost:5000"
+        }/api/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: email.trim()
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Unable to send OTP."
+        );
+      }
+
+      setMessage(
+        "OTP sent successfully. Please check your email."
+      );
+
+      // Go to OTP step automatically
+      setStep(2);
+
+    } catch (err) {
+      console.error("SEND OTP ERROR:", err);
+
+      setError(
+        err.message ||
+          "Unable to send OTP. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ======================================================
+  // VERIFY OTP - MOVE TO PASSWORD STEP
+  // ======================================================
+
+  const verifyOtp = (e) => {
+    e.preventDefault();
+
+    setError("");
+    setMessage("");
+
     if (!otp.trim()) {
       setError("Please enter the OTP.");
       return;
@@ -39,18 +101,36 @@ function ResetPassword() {
       return;
     }
 
-    // Password validation
+    setStep(3);
+  };
+
+  // ======================================================
+  // RESET PASSWORD
+  // ======================================================
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+
+    setError("");
+    setMessage("");
+
     if (!password) {
       setError("Please enter a new password.");
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError(
+        "Password must be at least 6 characters."
+      );
       return;
     }
 
-    // Confirm password
+    if (!confirmPassword) {
+      setError("Please confirm your new password.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -65,25 +145,26 @@ function ResetPassword() {
         password
       );
 
-      if (response.success) {
-        setMessage(
-          "Password reset successful. Redirecting to login..."
-        );
-
-        setEmail("");
-        setOtp("");
-        setPassword("");
-        setConfirmPassword("");
-
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 2000);
-      } else {
-        setError(
-          response.message ||
+      if (!response || response.success === false) {
+        throw new Error(
+          response?.message ||
             "Unable to reset password."
         );
       }
+
+      setMessage(
+        "Password reset successful. Redirecting to login..."
+      );
+
+      setEmail("");
+      setOtp("");
+      setPassword("");
+      setConfirmPassword("");
+
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1800);
+
     } catch (err) {
       console.error(
         "RESET PASSWORD ERROR:",
@@ -99,18 +180,48 @@ function ResetPassword() {
     }
   };
 
+  // ======================================================
+  // BACK TO LOGIN
+  // ======================================================
+
   const goToLogin = () => {
     window.location.href = "/";
   };
+
+  // ======================================================
+  // BACK STEP
+  // ======================================================
+
+  const goBack = () => {
+    setError("");
+    setMessage("");
+
+    if (step === 3) {
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      setStep(1);
+    }
+  };
+
+  // ======================================================
+  // PAGE
+  // ======================================================
 
   return (
     <div className="reset-page">
 
       {/* Background */}
       <div className="reset-background">
-        <div className="reset-circle circle-one"></div>
-        <div className="reset-circle circle-two"></div>
-        <div className="reset-circle circle-three"></div>
+
+        <div className="reset-orb reset-orb-one"></div>
+
+        <div className="reset-orb reset-orb-two"></div>
+
+        <div className="reset-grid"></div>
+
       </div>
 
       {/* Card */}
@@ -121,196 +232,373 @@ function ResetPassword() {
           ₹
         </div>
 
-        <h1>Reset Password</h1>
+        {/* ==================================================
+            STEP 1 - EMAIL
+        ================================================== */}
 
-        <p className="reset-subtitle">
-          Enter the OTP sent to your email and
-          create a new password.
-        </p>
+        {step === 1 && (
+          <>
+            <div className="reset-heading">
 
-        {/* Error */}
-        {error && (
-          <div className="reset-message error">
-            <span>⚠</span>
-            {error}
-          </div>
-        )}
+              <div className="reset-label">
+                PASSWORD RECOVERY
+              </div>
 
-        {/* Success */}
-        {message && (
-          <div className="reset-message success">
-            <span>✓</span>
-            {message}
-          </div>
-        )}
+              <h1>Forgot Password?</h1>
 
-        <form onSubmit={handleSubmit}>
-
-          {/* Email */}
-          <div className="reset-input-group">
-
-            <label>Email Address</label>
-
-            <div className="reset-input-wrapper">
-
-              <span className="reset-input-icon">
-                ✉
-              </span>
-
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
-                autoComplete="email"
-              />
+              <p>
+                Enter your email address and we'll
+                send you a verification OTP.
+              </p>
 
             </div>
 
-          </div>
+            {/* Error */}
+            {error && (
+              <div className="reset-error">
+                <span>!</span>
+                <p>{error}</p>
+              </div>
+            )}
 
-          {/* OTP */}
-          <div className="reset-input-group">
+            {/* Success */}
+            {message && (
+              <div className="reset-message success">
+                <span>✓</span>
+                {message}
+              </div>
+            )}
 
-            <label>OTP</label>
+            <form
+              className="reset-form"
+              onSubmit={sendOtp}
+            >
 
-            <div className="reset-input-wrapper">
+              <div className="reset-input-group">
 
-              <span className="reset-input-icon">
-                #
-              </span>
+                <label>
+                  Email Address
+                </label>
 
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={(e) => {
-                  const value =
-                    e.target.value.replace(
-                      /\D/g,
-                      ""
-                    );
+                <div className="reset-input-wrapper">
 
-                  setOtp(value);
-                }}
-                autoComplete="one-time-code"
-              />
+                  <span className="reset-input-icon">
+                    ✉
+                  </span>
 
-            </div>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) =>
+                      setEmail(e.target.value)
+                    }
+                    autoComplete="email"
+                    disabled={loading}
+                  />
 
-          </div>
+                </div>
 
-          {/* New Password */}
-          <div className="reset-input-group">
-
-            <label>New Password</label>
-
-            <div className="reset-input-wrapper">
-
-              <span className="reset-input-icon">
-                🔒
-              </span>
-
-              <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
-                placeholder="Enter new password"
-                value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
-                autoComplete="new-password"
-              />
+              </div>
 
               <button
-                type="button"
-                className="password-toggle"
-                onClick={() =>
-                  setShowPassword(
-                    !showPassword
-                  )
-                }
+                type="submit"
+                className="reset-submit"
+                disabled={loading}
               >
-                {showPassword ? "Hide" : "Show"}
+                <span>
+                  {loading
+                    ? "Sending OTP..."
+                    : "Send OTP"}
+                </span>
+
+                <span>
+                  →
+                </span>
               </button>
+
+            </form>
+
+            <button
+              type="button"
+              className="reset-back-login"
+              onClick={goToLogin}
+            >
+              ← Back to Login
+            </button>
+          </>
+        )}
+
+        {/* ==================================================
+            STEP 2 - OTP
+        ================================================== */}
+
+        {step === 2 && (
+          <>
+            <div className="reset-heading">
+
+              <div className="reset-label">
+                VERIFICATION
+              </div>
+
+              <h1>Enter OTP</h1>
+
+              <p>
+                We've sent a 6-digit verification
+                code to <strong>{email}</strong>.
+              </p>
 
             </div>
 
-          </div>
+            {/* Error */}
+            {error && (
+              <div className="reset-error">
+                <span>!</span>
+                <p>{error}</p>
+              </div>
+            )}
 
-          {/* Confirm Password */}
-          <div className="reset-input-group">
+            {/* Success */}
+            {message && (
+              <div className="reset-message success">
+                <span>✓</span>
+                {message}
+              </div>
+            )}
 
-            <label>Confirm Password</label>
+            <form
+              className="reset-form"
+              onSubmit={verifyOtp}
+            >
 
-            <div className="reset-input-wrapper">
+              <div className="reset-input-group">
 
-              <span className="reset-input-icon">
-                🔒
-              </span>
+                <label>
+                  Verification OTP
+                </label>
 
-              <input
-                type={
-                  showConfirmPassword
-                    ? "text"
-                    : "password"
-                }
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(
-                    e.target.value
-                  )
-                }
-                autoComplete="new-password"
-              />
+                <div className="reset-input-wrapper">
+
+                  <span className="reset-input-icon">
+                    #
+                  </span>
+
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="Enter 6-digit OTP"
+                    value={otp}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value.replace(
+                          /\D/g,
+                          ""
+                        );
+
+                      setOtp(value);
+                    }}
+                    autoComplete="one-time-code"
+                    autoFocus
+                  />
+
+                </div>
+
+              </div>
 
               <button
-                type="button"
-                className="password-toggle"
-                onClick={() =>
-                  setShowConfirmPassword(
-                    !showConfirmPassword
-                  )
-                }
+                type="submit"
+                className="reset-submit"
               >
-                {showConfirmPassword
-                  ? "Hide"
-                  : "Show"}
+                <span>
+                  Next
+                </span>
+
+                <span>
+                  →
+                </span>
               </button>
+
+            </form>
+
+            <button
+              type="button"
+              className="reset-back-login"
+              onClick={goBack}
+            >
+              ← Change Email
+            </button>
+          </>
+        )}
+
+        {/* ==================================================
+            STEP 3 - NEW PASSWORD
+        ================================================== */}
+
+        {step === 3 && (
+          <>
+            <div className="reset-heading">
+
+              <div className="reset-label">
+                NEW PASSWORD
+              </div>
+
+              <h1>Create New Password</h1>
+
+              <p>
+                OTP verified. Create a new password
+                for your account.
+              </p>
 
             </div>
 
-          </div>
+            {/* Error */}
+            {error && (
+              <div className="reset-error">
+                <span>!</span>
+                <p>{error}</p>
+              </div>
+            )}
 
-          {/* Reset Button */}
-          <button
-            type="submit"
-            className="reset-button"
-            disabled={loading}
-          >
-            {loading
-              ? "Resetting Password..."
-              : "Reset Password"}
-          </button>
+            {/* Success */}
+            {message && (
+              <div className="reset-message success">
+                <span>✓</span>
+                {message}
+              </div>
+            )}
 
-        </form>
+            <form
+              className="reset-form"
+              onSubmit={handleResetPassword}
+            >
 
-        {/* Back to Login */}
-        <button
-          type="button"
-          className="back-login-button"
-          onClick={goToLogin}
-        >
-          ← Back to Login
-        </button>
+              {/* New Password */}
+
+              <div className="reset-input-group">
+
+                <label>
+                  New Password
+                </label>
+
+                <div className="reset-input-wrapper">
+
+                  <span className="reset-input-icon">
+                    🔒
+                  </span>
+
+                  <input
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
+                    placeholder="Enter new password"
+                    value={password}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
+                    autoComplete="new-password"
+                  />
+
+                  <button
+                    type="button"
+                    className="reset-eye"
+                    onClick={() =>
+                      setShowPassword(
+                        !showPassword
+                      )
+                    }
+                  >
+                    {showPassword
+                      ? "🙈"
+                      : "👁"}
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* Confirm Password */}
+
+              <div className="reset-input-group">
+
+                <label>
+                  Confirm Password
+                </label>
+
+                <div className="reset-input-wrapper">
+
+                  <span className="reset-input-icon">
+                    🔒
+                  </span>
+
+                  <input
+                    type={
+                      showConfirmPassword
+                        ? "text"
+                        : "password"
+                    }
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) =>
+                      setConfirmPassword(
+                        e.target.value
+                      )
+                    }
+                    autoComplete="new-password"
+                  />
+
+                  <button
+                    type="button"
+                    className="reset-eye"
+                    onClick={() =>
+                      setShowConfirmPassword(
+                        !showConfirmPassword
+                      )
+                    }
+                  >
+                    {showConfirmPassword
+                      ? "🙈"
+                      : "👁"}
+                  </button>
+
+                </div>
+
+              </div>
+
+              <button
+                type="submit"
+                className="reset-submit"
+                disabled={loading}
+              >
+                <span>
+                  {loading
+                    ? "Resetting Password..."
+                    : "Reset Password"}
+                </span>
+
+                <span>
+                  →
+                </span>
+              </button>
+
+            </form>
+
+            <button
+              type="button"
+              className="reset-back-login"
+              onClick={goBack}
+            >
+              ← Back to OTP
+            </button>
+          </>
+        )}
+
+        {/* Security */}
+        <div className="reset-security">
+          🔒 Your account security is our priority.
+        </div>
 
       </div>
     </div>
