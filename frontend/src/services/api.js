@@ -2,7 +2,6 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:5000/api";
 
-
 // ========================================
 // GET AUTH TOKEN
 // ========================================
@@ -13,11 +12,13 @@ const getToken = () => {
   );
 };
 
-
 // ========================================
 // COMMON API REQUEST
 // ========================================
-const request = async (endpoint, options = {}) => {
+const request = async (
+  endpoint,
+  options = {}
+) => {
   const token = getToken();
 
   const headers = {
@@ -26,7 +27,8 @@ const request = async (endpoint, options = {}) => {
   };
 
   if (token) {
-    headers.Authorization = `Bearer ${token}`;
+    headers.Authorization =
+      `Bearer ${token}`;
   }
 
   const response = await fetch(
@@ -42,18 +44,20 @@ const request = async (endpoint, options = {}) => {
   try {
     data = await response.json();
   } catch {
-    throw new Error("Invalid server response");
+    throw new Error(
+      "Invalid server response"
+    );
   }
 
   if (!response.ok) {
     throw new Error(
-      data.message || "Something went wrong"
+      data.message ||
+      "Something went wrong"
     );
   }
 
   return data;
 };
-
 
 // ========================================
 // LOGIN
@@ -67,7 +71,8 @@ export const loginUser = async (
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
       body: JSON.stringify({
         email,
@@ -81,7 +86,9 @@ export const loginUser = async (
   try {
     data = await response.json();
   } catch {
-    throw new Error("Invalid server response");
+    throw new Error(
+      "Invalid server response"
+    );
   }
 
   console.log(
@@ -91,13 +98,13 @@ export const loginUser = async (
 
   if (!response.ok) {
     throw new Error(
-      data.message || "Login failed"
+      data.message ||
+      "Login failed"
     );
   }
 
   return data;
 };
-
 
 // ========================================
 // REGISTER
@@ -107,16 +114,18 @@ export const registerUser = async (
   email,
   password
 ) => {
-  return request("/auth/register", {
-    method: "POST",
-    body: JSON.stringify({
-      name,
-      email,
-      password,
-    }),
-  });
+  return request(
+    "/auth/register",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+      }),
+    }
+  );
 };
-
 
 // ========================================
 // FORGOT PASSWORD
@@ -135,9 +144,8 @@ export const forgotPassword = async (
   );
 };
 
-
 // ========================================
-// RESET PASSWORD USING OTP
+// RESET PASSWORD
 // ========================================
 export const resetPassword = async (
   email,
@@ -157,7 +165,6 @@ export const resetPassword = async (
   );
 };
 
-
 // ========================================
 // GOOGLE LOGIN
 // ========================================
@@ -175,90 +182,85 @@ export const googleLogin = async (
   );
 };
 
-
 // ========================================
 // DASHBOARD
 // ========================================
 export const getDashboard = async () => {
-  return request("/dashboard");
+  return request(
+    "/dashboard"
+  );
 };
-
 
 // ========================================
 // CATEGORIES
 // ========================================
 export const getCategories = async () => {
-  return request("/categories");
+  return request(
+    "/categories"
+  );
 };
-
 
 export const createCategory = async (
   name,
   type
 ) => {
-  return request("/categories", {
-    method: "POST",
-    body: JSON.stringify({
-      name,
-      type,
-    }),
-  });
+  return request(
+    "/categories",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        type,
+      }),
+    }
+  );
 };
-
 
 // ========================================
 // TRANSACTIONS
 // ========================================
-export const getTransactions = async () => {
-  return request("/transactions");
-};
+export const getTransactions =
+  async () => {
+    return request(
+      "/transactions"
+    );
+  };
 
+export const createTransaction =
+  async (transaction) => {
+    return request(
+      "/transactions",
+      {
+        method: "POST",
+        body: JSON.stringify(
+          transaction
+        ),
+      }
+    );
+  };
 
-export const createTransaction = async (
-  transaction
-) => {
-  return request("/transactions", {
-    method: "POST",
-    body: JSON.stringify(transaction),
-  });
-};
+export const updateTransaction =
+  async (
+    id,
+    transaction
+  ) => {
+    return request(
+      `/transactions/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(
+          transaction
+        ),
+      }
+    );
+  };
 
-
-export const updateTransaction = async (
-  id,
-  transaction
-) => {
-  return request(
-    `/transactions/${id}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(transaction),
-    }
-  );
-};
-
-
-export const deleteTransaction = async (
-  id
-) => {
-  return request(
-    `/transactions/${id}`,
-    {
-      method: "DELETE",
-    }
-  );
-};
-
-
-// ========================================
-// LOGOUT
-// ========================================
-export const logoutUser = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-
-  sessionStorage.removeItem("token");
-  sessionStorage.removeItem("user");
-
-  window.location.href = "/login";
-};
+export const deleteTransaction =
+  async (id) => {
+    return request(
+      `/transactions/${id}`,
+      {
+        method: "DELETE",
+      }
+    );
+  };

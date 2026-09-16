@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./Navbar.css";
 
-function Navbar({ activePage }) {
+function Navbar({ activePage, onLogout }) {
   const titles = {
     dashboard: "Dashboard",
     categories: "Categories",
@@ -12,7 +12,9 @@ function Navbar({ activePage }) {
 
   const title = titles[activePage] || "Dashboard";
 
-  const userData = localStorage.getItem("user");
+  const userData =
+    localStorage.getItem("user") ||
+    sessionStorage.getItem("user");
 
   let user = null;
 
@@ -25,9 +27,7 @@ function Navbar({ activePage }) {
   const userName = user?.name || "Amit";
   const userEmail = user?.email || "";
 
-  const avatarLetter = userName
-    .charAt(0)
-    .toUpperCase();
+  const avatarLetter = userName.charAt(0).toUpperCase();
 
   const [showNotifications, setShowNotifications] =
     useState(false);
@@ -112,16 +112,6 @@ function Navbar({ activePage }) {
     );
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
-
-    window.location.href = "/login";
-  };
-
   return (
     <header
       className="navbar"
@@ -149,9 +139,7 @@ function Navbar({ activePage }) {
           <button
             type="button"
             className={`navbar-icon-btn ${
-              showNotifications
-                ? "active"
-                : ""
+              showNotifications ? "active" : ""
             }`}
             onClick={handleNotificationClick}
             aria-label="Notifications"
@@ -173,6 +161,7 @@ function Navbar({ activePage }) {
               <div className="dropdown-header">
                 <div>
                   <h3>Notifications</h3>
+
                   <span>
                     {unreadCount} unread
                   </span>
@@ -193,7 +182,10 @@ function Navbar({ activePage }) {
                 {notifications.length === 0 ? (
                   <div className="empty-notifications">
                     <span>🔕</span>
-                    <p>No notifications</p>
+
+                    <p>
+                      No notifications
+                    </p>
                   </div>
                 ) : (
                   notifications.map(
@@ -211,6 +203,7 @@ function Navbar({ activePage }) {
                         </div>
 
                         <div className="notification-content">
+
                           <strong>
                             {notification.title}
                           </strong>
@@ -222,6 +215,7 @@ function Navbar({ activePage }) {
                           <span>
                             {notification.time}
                           </span>
+
                         </div>
 
                         {notification.unread && (
@@ -253,9 +247,7 @@ function Navbar({ activePage }) {
           <button
             type="button"
             className={`navbar-user ${
-              showProfile
-                ? "active"
-                : ""
+              showProfile ? "active" : ""
             }`}
             onClick={handleProfileClick}
           >
@@ -265,6 +257,7 @@ function Navbar({ activePage }) {
             </div>
 
             <div className="user-info">
+
               <strong>
                 {userName}
               </strong>
@@ -272,6 +265,7 @@ function Navbar({ activePage }) {
               <span>
                 {userEmail}
               </span>
+
             </div>
 
             <span className="profile-arrow">
@@ -290,6 +284,7 @@ function Navbar({ activePage }) {
                 </div>
 
                 <div>
+
                   <strong>
                     {userName}
                   </strong>
@@ -297,32 +292,43 @@ function Navbar({ activePage }) {
                   <span>
                     {userEmail}
                   </span>
+
                 </div>
 
               </div>
 
               <div className="profile-dropdown-divider"></div>
 
+              {/* Profile */}
               <button
                 type="button"
                 className="profile-menu-item"
               >
                 <span>👤</span>
+
                 <div>
-                  <strong>Profile</strong>
+                  <strong>
+                    Profile
+                  </strong>
+
                   <small>
                     View your profile
                   </small>
                 </div>
               </button>
 
+              {/* Settings */}
               <button
                 type="button"
                 className="profile-menu-item"
               >
                 <span>⚙️</span>
+
                 <div>
-                  <strong>Settings</strong>
+                  <strong>
+                    Settings
+                  </strong>
+
                   <small>
                     Manage your account
                   </small>
@@ -331,10 +337,11 @@ function Navbar({ activePage }) {
 
               <div className="profile-dropdown-divider"></div>
 
+              {/* Logout */}
               <button
                 type="button"
                 className="profile-logout"
-                onClick={handleLogout}
+                onClick={onLogout}
               >
                 <span>↪</span>
                 Logout

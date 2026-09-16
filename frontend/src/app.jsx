@@ -15,11 +15,12 @@ import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 
 function App() {
-  const currentPath = window.location.pathname;
+  const currentPath =
+    window.location.pathname;
 
-  // =========================
+  // ========================================
   // GET SAVED TOKEN
-  // =========================
+  // ========================================
   const getSavedToken = () => {
     return (
       localStorage.getItem("token") ||
@@ -27,78 +28,100 @@ function App() {
     );
   };
 
-  // =========================
-  // STATES
-  // =========================
-  const [token, setToken] = useState(getSavedToken());
-  const [activePage, setActivePage] = useState("dashboard");
-  const [showRegister, setShowRegister] = useState(false);
+  const [token, setToken] =
+    useState(getSavedToken());
 
-  // =========================
+  const [activePage, setActivePage] =
+    useState("dashboard");
+
+  const [showRegister, setShowRegister] =
+    useState(false);
+
+  // ========================================
   // LOGIN
-  // =========================
+  // ========================================
   const handleLogin = (newToken) => {
     setToken(newToken);
     setShowRegister(false);
   };
 
-  // =========================
+  // ========================================
   // REGISTER SUCCESS
-  // =========================
-  const handleRegisterSuccess = (newToken) => {
-    setToken(newToken);
-    setShowRegister(false);
-  };
+  // ========================================
+  const handleRegisterSuccess =
+    (newToken) => {
+      setToken(newToken);
+      setShowRegister(false);
+    };
 
-  // =========================
+  // ========================================
   // LOGOUT
-  // =========================
+  // ========================================
   const handleLogout = () => {
+    // Remove authentication data
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     sessionStorage.removeItem("token");
     sessionStorage.removeItem("user");
 
+    // Update React state
     setToken(null);
+
+    // Reset active page
     setActivePage("dashboard");
+
+    // Close register screen if open
+    setShowRegister(false);
   };
 
-  // =========================
+  // ========================================
   // RESET PASSWORD PAGE
-  // =========================
-  if (currentPath === "/reset-password") {
+  // ========================================
+  if (
+    currentPath === "/reset-password"
+  ) {
     return <ResetPassword />;
   }
 
-  // =========================
-  // AUTH SCREEN
-  // =========================
+  // ========================================
+  // AUTHENTICATION CHECK
+  // ========================================
   if (!token) {
     return (
       <div className="auth-ui">
         {showRegister ? (
           <Register
-            onRegisterSuccess={handleRegisterSuccess}
-            onLoginClick={() => setShowRegister(false)}
+            onRegisterSuccess={
+              handleRegisterSuccess
+            }
+            onLoginClick={() =>
+              setShowRegister(false)
+            }
           />
         ) : (
           <Login
             onLogin={handleLogin}
-            onRegisterClick={() => setShowRegister(true)}
+            onRegisterClick={() =>
+              setShowRegister(true)
+            }
           />
         )}
       </div>
     );
   }
 
-  // =========================
-  // PAGE RENDER
-  // =========================
+  // ========================================
+  // RENDER ACTIVE PAGE
+  // ========================================
   const renderPage = () => {
     switch (activePage) {
       case "dashboard":
-        return <Dashboard onLogout={handleLogout} />;
+        return (
+          <Dashboard
+            onLogout={handleLogout}
+          />
+        );
 
       case "categories":
         return <Categories />;
@@ -110,18 +133,27 @@ function App() {
         return <Reports />;
 
       case "settings":
-        return <Settings onLogout={handleLogout} />;
+        return (
+          <Settings
+            onLogout={handleLogout}
+          />
+        );
 
       default:
-        return <Dashboard onLogout={handleLogout} />;
+        return (
+          <Dashboard
+            onLogout={handleLogout}
+          />
+        );
     }
   };
 
-  // =========================
+  // ========================================
   // MAIN APP
-  // =========================
+  // ========================================
   return (
     <div className="app-layout">
+
       <Sidebar
         activePage={activePage}
         setActivePage={setActivePage}
@@ -129,13 +161,17 @@ function App() {
       />
 
       <main className="main-content">
-        <Navbar activePage={activePage}
-        onLogout={handleLogout}
-         />
+
+        {/* Navbar Logout Connection */}
+        <Navbar
+          activePage={activePage}
+          onLogout={handleLogout}
+        />
 
         <div className="app-ui-transition">
           {renderPage()}
         </div>
+
       </main>
     </div>
   );
