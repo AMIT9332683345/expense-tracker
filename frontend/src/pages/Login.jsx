@@ -734,7 +734,7 @@ function Login({
 
     return (
 
-      <div className="login-page">
+      <div className="login-page forgot-page">
 
         <div className="login-background">
 

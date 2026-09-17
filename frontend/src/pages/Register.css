@@ -962,3 +962,295 @@
   }
 
 }
+
+
+
+
+/* =========================================================
+   REGISTER PAGE — VIOLET CINEMATIC CURTAIN
+========================================================= */
+
+.register-page {
+  position: relative;
+  overflow: hidden;
+}
+
+
+/* Curtain base */
+
+.register-page .curtain {
+  position: fixed;
+
+  top: 0;
+  bottom: 0;
+
+  width: 51vw;
+  height: 100vh;
+
+  z-index: 99999;
+
+  pointer-events: none;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      90deg,
+      #080016 0%,
+      #1e063d 12%,
+      #100021 25%,
+      #4c1d95 38%,
+      #17052e 50%,
+      #6d28d9 64%,
+      #16052d 78%,
+      #080016 100%
+    );
+
+  box-shadow:
+    inset 0 0 100px rgba(0,0,0,.9),
+    inset 0 0 35px rgba(168,85,247,.18);
+
+  will-change: transform, opacity;
+
+  animation-duration: 2.05s;
+  animation-delay: .1s;
+  animation-fill-mode: forwards;
+  animation-timing-function:
+    cubic-bezier(.76,0,.18,1);
+}
+
+
+/* Left */
+
+.register-page .curtain-left {
+  left: 0;
+
+  transform-origin: left center;
+
+  animation-name: registerCurtainLeft;
+}
+
+
+/* Right */
+
+.register-page .curtain-right {
+  right: 0;
+
+  transform-origin: right center;
+
+  animation-name: registerCurtainRight;
+}
+
+
+/* =========================================================
+   FABRIC
+========================================================= */
+
+.register-page .curtain-folds {
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    repeating-linear-gradient(
+      90deg,
+
+      rgba(255,255,255,.055) 0px,
+      rgba(255,255,255,.055) 3px,
+
+      rgba(0,0,0,.35) 8px,
+      rgba(0,0,0,.35) 15px,
+
+      rgba(192,132,252,.08) 20px,
+      rgba(192,132,252,.08) 24px,
+
+      rgba(0,0,0,.4) 30px,
+      rgba(0,0,0,.4) 37px
+    );
+
+  opacity: .95;
+}
+
+
+/* Purple glow */
+
+.register-page .curtain-folds::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(168,85,247,.22),
+      transparent 58%
+    );
+
+  opacity: .8;
+}
+
+
+/* =========================================================
+   EDGE LIGHT
+========================================================= */
+
+.register-page .curtain-left::after,
+.register-page .curtain-right::after {
+
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+
+  width: 4px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      #c084fc,
+      #a855f7,
+      transparent
+    );
+
+  box-shadow:
+    0 0 15px rgba(168,85,247,.9),
+    0 0 45px rgba(168,85,247,.55);
+}
+
+
+.register-page .curtain-left::after {
+  right: 0;
+}
+
+
+.register-page .curtain-right::after {
+  left: 0;
+}
+
+
+/* =========================================================
+   REGISTER CURTAIN MOTION
+========================================================= */
+
+@keyframes registerCurtainLeft {
+
+  0% {
+    transform:
+      translateX(0)
+      rotateY(0deg)
+      scaleX(1);
+
+    opacity: 1;
+  }
+
+  35% {
+    transform:
+      translateX(-10%)
+      rotateY(5deg)
+      scaleX(.97);
+
+    opacity: 1;
+  }
+
+  70% {
+    transform:
+      translateX(-72%)
+      rotateY(12deg)
+      scaleX(.86);
+
+    opacity: .95;
+  }
+
+  100% {
+    transform:
+      translateX(-105%)
+      rotateY(18deg)
+      scaleX(.7);
+
+    opacity: 0;
+  }
+}
+
+
+@keyframes registerCurtainRight {
+
+  0% {
+    transform:
+      translateX(0)
+      rotateY(0deg)
+      scaleX(1);
+
+    opacity: 1;
+  }
+
+  35% {
+    transform:
+      translateX(10%)
+      rotateY(-5deg)
+      scaleX(.97);
+
+    opacity: 1;
+  }
+
+  70% {
+    transform:
+      translateX(72%)
+      rotateY(-12deg)
+      scaleX(.86);
+
+    opacity: .95;
+  }
+
+  100% {
+    transform:
+      translateX(105%)
+      rotateY(-18deg)
+      scaleX(.7);
+
+    opacity: 0;
+  }
+}
+
+
+/* =========================================================
+   REGISTER CONTENT REVEAL
+========================================================= */
+
+.register-page .register-card,
+.register-page .register-section {
+  animation:
+    registerContentReveal
+    1s
+    cubic-bezier(.22,1,.36,1)
+    .75s
+    both;
+}
+
+
+@keyframes registerContentReveal {
+
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(22px)
+      scale(.96);
+
+    filter: blur(7px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+
+    filter: blur(0);
+  }
+}
