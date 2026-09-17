@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const crypto = require("crypto");
+const https = require("https");
 
 const User = require("../models/user");
 
@@ -21,11 +22,11 @@ const generateToken = (user) => {
   return jwt.sign(
     {
       id: user._id,
-      email: user.email
+      email: user.email,
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "7d"
+      expiresIn: "7d",
     }
   );
 };
@@ -39,40 +40,33 @@ const generateOtp = () => {
 };
 
 // ======================================================
-// BREVO API
+// BREVO API EMAIL
 // ======================================================
 
-const sendOtpEmail = async (email, otp, name) => {
-  try {
-    // ----------------------------------------------
-    // CHECK ENVIRONMENT VARIABLES
-    // ----------------------------------------------
-
+const sendBrevoEmail = (email, otp, name) => {
+  return new Promise((resolve, reject) => {
     if (!process.env.BREVO_API_KEY) {
-      throw new Error("BREVO_API_KEY is missing");
+      return reject(
+        new Error("BREVO_API_KEY is missing")
+      );
     }
 
     if (!process.env.EMAIL_FROM) {
-      throw new Error("EMAIL_FROM is missing");
+      return reject(
+        new Error("EMAIL_FROM is missing")
+      );
     }
 
-    console.log("======================================");
-    console.log("BREVO API OTP EMAIL");
-    console.log("To:", email);
-    console.log("From:", process.env.EMAIL_FROM);
-    console.log("======================================");
+    const senderName =
+      process.env.EMAIL_FROM_NAME ||
+      "Expense Tracker";
 
-    // ----------------------------------------------
-    // EMAIL HTML
-    // ----------------------------------------------
-
-    const htmlContent = `
+    const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Reset OTP</title>
 </head>
 
 <body style="
@@ -86,7 +80,7 @@ const sendOtpEmail = async (email, otp, name) => {
     max-width:600px;
     margin:40px auto;
     background:#ffffff;
-    border-radius:12px;
+    border-radius:14px;
     overflow:hidden;
     box-shadow:0 5px 20px rgba(0,0,0,0.08);
   ">
@@ -113,12 +107,12 @@ const sendOtpEmail = async (email, otp, name) => {
       </p>
 
       <p style="color:#4b5563;">
-        We received a request to reset your Expense Tracker
-        account password.
+        We received a request to reset your
+        Expense Tracker password.
       </p>
 
       <p style="color:#4b5563;">
-        Your One-Time Password (OTP) is:
+        Your OTP is:
       </p>
 
       <div style="
@@ -141,12 +135,13 @@ const sendOtpEmail = async (email, otp, name) => {
       </div>
 
       <p style="color:#6b7280;">
-        This OTP will expire in <strong>10 minutes</strong>.
+        This OTP will expire in
+        <strong>10 minutes</strong>.
       </p>
 
       <p style="color:#6b7280;">
-        If you did not request a password reset, you can safely
-        ignore this email.
+        If you did not request a password reset,
+        you can safely ignore this email.
       </p>
 
       <hr style="
@@ -160,7 +155,8 @@ const sendOtpEmail = async (email, otp, name) => {
         font-size:12px;
         text-align:center;
       ">
-        This is an automated email. Please do not reply.
+        This is an automated email.
+        Please do not reply.
       </p>
 
     </div>
@@ -170,38 +166,25 @@ const sendOtpEmail = async (email, otp, name) => {
 </html>
 `;
 
-    // ----------------------------------------------
-    // BREVO API REQUEST
-    // ----------------------------------------------
+    const postData = JSON.stringify({
+      sender: {
+        name: senderName,
+        email: process.env.EMAIL_FROM,
+      },
 
-    const response = await fetch(
-      "https://api.brevo.com/v3/smtp/email",
-      {
-        method: "POST",
-
-        headers: {
-          "accept": "application/json",
-          "api-key": process.env.BREVO_API_KEY,
-          "content-type": "application/json"
+      to: [
+        {
+          email: email,
+          name: name || "User",
         },
+      ],
 
-        body: JSON.stringify({
-          sender: {
-            name: "Expense Tracker",
-            email: process.env.EMAIL_FROM
-          },
+      subject:
+        "Your Expense Tracker Password Reset OTP",
 
-          to: [
-            {
-              email: email,
-              name: name || "User"
-            }
-          ],
+      htmlContent: html,
 
-          subject:
-            "Your Expense Tracker Password Reset OTP",
-
-          textContent: `
+      textContent: `
 Hello ${name || "User"},
 
 Your Expense Tracker password reset OTP is:
@@ -210,74 +193,107 @@ ${otp}
 
 This OTP will expire in 10 minutes.
 
-If you did not request a password reset, please ignore this email.
+If you did not request a password reset,
+please ignore this email.
 
 Expense Tracker
 `,
+    });
 
-          htmlContent
-        })
+    const options = {
+      hostname: "api.brevo.com",
+      path: "/v3/smtp/email",
+      method: "POST",
+
+      headers: {
+        "accept": "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json",
+        "content-length": Buffer.byteLength(
+          postData
+        ),
+      },
+
+      timeout: 30000,
+    };
+
+    const request = https.request(
+      options,
+      (response) => {
+        let body = "";
+
+        response.on("data", (chunk) => {
+          body += chunk;
+        });
+
+        response.on("end", () => {
+          let data;
+
+          try {
+            data = JSON.parse(body);
+          } catch {
+            data = body;
+          }
+
+          if (
+            response.statusCode >= 200 &&
+            response.statusCode < 300
+          ) {
+            console.log(
+              "BREVO API EMAIL SENT SUCCESSFULLY"
+            );
+
+            console.log(
+              "Message ID:",
+              data?.messageId
+            );
+
+            resolve(data);
+
+          } else {
+            console.error(
+              "BREVO API ERROR"
+            );
+
+            console.error(
+              "Status:",
+              response.statusCode
+            );
+
+            console.error(
+              "Response:",
+              data
+            );
+
+            reject(
+              new Error(
+                data?.message ||
+                "Brevo email sending failed"
+              )
+            );
+          }
+        });
       }
     );
 
-    // ----------------------------------------------
-    // READ RESPONSE
-    // ----------------------------------------------
+    request.on("timeout", () => {
+      request.destroy();
 
-    const responseText = await response.text();
-
-    let responseData = {};
-
-    try {
-      responseData = responseText
-        ? JSON.parse(responseText)
-        : {};
-    } catch {
-      responseData = {
-        raw: responseText
-      };
-    }
-
-    // ----------------------------------------------
-    // BREVO ERROR
-    // ----------------------------------------------
-
-    if (!response.ok) {
-
-      console.error("BREVO API ERROR");
-      console.error("Status:", response.status);
-      console.error("Response:", responseData);
-
-      throw new Error(
-        responseData?.message ||
-        responseData?.code ||
-        `Brevo API failed with status ${response.status}`
+      reject(
+        new Error(
+          "Brevo API connection timeout"
+        )
       );
-    }
+    });
 
-    // ----------------------------------------------
-    // SUCCESS
-    // ----------------------------------------------
+    request.on("error", (error) => {
+      reject(error);
+    });
 
-    console.log("OTP EMAIL SENT SUCCESSFULLY");
-    console.log(
-      "Brevo Message ID:",
-      responseData?.messageId || "N/A"
-    );
+    request.write(postData);
 
-    console.log("======================================");
-
-    return responseData;
-
-  } catch (error) {
-
-    console.error("BREVO API EMAIL ERROR:", error);
-    console.error("Error message:", error.message);
-
-    throw new Error(
-      `Brevo email error: ${error.message}`
-    );
-  }
+    request.end();
+  });
 };
 
 // ======================================================
@@ -286,24 +302,29 @@ Expense Tracker
 
 const register = async (req, res) => {
   try {
-
     const {
       name,
       email,
-      password
+      password,
     } = req.body;
 
-    if (!name || !email || !password) {
+    if (
+      !name ||
+      !email ||
+      !password
+    ) {
       return res.status(400).json({
+        success: false,
         message:
-          "Name, email and password are required"
+          "Name, email and password are required",
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
+        success: false,
         message:
-          "Password must be at least 6 characters long"
+          "Password must be at least 6 characters long",
       });
     }
 
@@ -312,30 +333,35 @@ const register = async (req, res) => {
 
     const existingUser =
       await User.findOne({
-        email: normalizedEmail
+        email: normalizedEmail,
       });
 
     if (existingUser) {
       return res.status(400).json({
-        message: "User already exists"
+        success: false,
+        message:
+          "User already exists",
       });
     }
 
     const hashedPassword =
-      await bcrypt.hash(password, 10);
+      await bcrypt.hash(
+        password,
+        10
+      );
 
     const user =
       await User.create({
         name: name.trim(),
         email: normalizedEmail,
-        password: hashedPassword
+        password: hashedPassword,
       });
 
     const token =
       generateToken(user);
 
     return res.status(201).json({
-
+      success: true,
       message:
         "Registration successful",
 
@@ -344,26 +370,21 @@ const register = async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
-      }
-
+        email: user.email,
+      },
     });
 
   } catch (error) {
-
     console.error(
       "REGISTER ERROR:",
       error
     );
 
     return res.status(500).json({
-
+      success: false,
       message:
         "Registration failed",
-
-      error:
-        error.message
-
+      error: error.message,
     });
   }
 };
@@ -374,16 +395,16 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-
     const {
       email,
-      password
+      password,
     } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
+        success: false,
         message:
-          "Email and password are required"
+          "Email and password are required",
       });
     }
 
@@ -392,20 +413,22 @@ const login = async (req, res) => {
 
     const user =
       await User.findOne({
-        email: normalizedEmail
+        email: normalizedEmail,
       });
 
     if (!user) {
       return res.status(401).json({
+        success: false,
         message:
-          "Invalid email or password"
+          "Invalid email or password",
       });
     }
 
     if (!user.password) {
       return res.status(400).json({
+        success: false,
         message:
-          "This account uses Google Login. Please continue with Google."
+          "This account uses Google Login. Please continue with Google.",
       });
     }
 
@@ -417,8 +440,9 @@ const login = async (req, res) => {
 
     if (!passwordMatch) {
       return res.status(401).json({
+        success: false,
         message:
-          "Invalid email or password"
+          "Invalid email or password",
       });
     }
 
@@ -426,7 +450,7 @@ const login = async (req, res) => {
       generateToken(user);
 
     return res.json({
-
+      success: true,
       message:
         "Login successful",
 
@@ -435,26 +459,21 @@ const login = async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
-      }
-
+        email: user.email,
+      },
     });
 
   } catch (error) {
-
     console.error(
       "LOGIN ERROR:",
       error
     );
 
     return res.status(500).json({
-
+      success: false,
       message:
         "Login failed",
-
-      error:
-        error.message
-
+      error: error.message,
     });
   }
 };
@@ -464,12 +483,8 @@ const login = async (req, res) => {
 // ======================================================
 
 const forgotPassword = async (req, res) => {
-
   try {
-
-    const {
-      email
-    } = req.body;
+    const { email } = req.body;
 
     console.log(
       "FORGOT PASSWORD REQUEST:",
@@ -478,8 +493,9 @@ const forgotPassword = async (req, res) => {
 
     if (!email) {
       return res.status(400).json({
+        success: false,
         message:
-          "Email is required"
+          "Email is required",
       });
     }
 
@@ -488,24 +504,17 @@ const forgotPassword = async (req, res) => {
 
     const user =
       await User.findOne({
-        email: normalizedEmail
+        email: normalizedEmail,
       });
 
-    // ----------------------------------------------
-    // DON'T REVEAL ACCOUNT EXISTENCE
-    // ----------------------------------------------
-
+    // Don't reveal whether account exists
     if (!user) {
-
       return res.json({
+        success: true,
         message:
-          "If an account exists with this email, an OTP has been sent."
+          "If an account exists with this email, an OTP has been sent.",
       });
     }
-
-    // ----------------------------------------------
-    // GENERATE OTP
-    // ----------------------------------------------
 
     const otp =
       generateOtp();
@@ -514,10 +523,6 @@ const forgotPassword = async (req, res) => {
       "OTP GENERATED FOR:",
       normalizedEmail
     );
-
-    // ----------------------------------------------
-    // OTP EXPIRY
-    // ----------------------------------------------
 
     const expiresAt =
       new Date(
@@ -534,23 +539,36 @@ const forgotPassword = async (req, res) => {
 
     await user.save();
 
-    // ----------------------------------------------
-    // SEND EMAIL
-    // ----------------------------------------------
-
     try {
+      console.log(
+        "======================================"
+      );
 
-      await sendOtpEmail(
+      console.log(
+        "BREVO API OTP EMAIL"
+      );
+
+      console.log(
+        "To:",
+        normalizedEmail
+      );
+
+      console.log(
+        "From:",
+        process.env.EMAIL_FROM
+      );
+
+      console.log(
+        "======================================"
+      );
+
+      await sendBrevoEmail(
         normalizedEmail,
         otp,
         user.name
       );
 
     } catch (emailError) {
-
-      // ------------------------------------------
-      // CLEAR OTP IF EMAIL FAILS
-      // ------------------------------------------
 
       user.resetOtp = null;
 
@@ -566,25 +584,18 @@ const forgotPassword = async (req, res) => {
       );
 
       return res.status(500).json({
-
+        success: false,
         message:
           "Unable to send OTP email",
-
         error:
-          emailError.message
-
+          emailError.message,
       });
     }
 
-    // ----------------------------------------------
-    // SUCCESS
-    // ----------------------------------------------
-
     return res.json({
-
+      success: true,
       message:
-        "OTP sent successfully"
-
+        "OTP sent successfully",
     });
 
   } catch (error) {
@@ -595,13 +606,11 @@ const forgotPassword = async (req, res) => {
     );
 
     return res.status(500).json({
-
+      success: false,
       message:
         "Failed to process password reset",
-
       error:
-        error.message
-
+        error.message,
     });
   }
 };
@@ -610,43 +619,41 @@ const forgotPassword = async (req, res) => {
 // RESET PASSWORD
 // ======================================================
 
-const resetPassword = async (req, res) => {
-
+const resetPassword = async (
+  req,
+  res
+) => {
   try {
 
     const {
       email,
       otp,
       password,
-      newPassword
+      newPassword,
     } = req.body;
 
     const finalPassword =
       newPassword || password;
-
-    // ----------------------------------------------
-    // VALIDATION
-    // ----------------------------------------------
 
     if (
       !email ||
       !otp ||
       !finalPassword
     ) {
-
       return res.status(400).json({
+        success: false,
         message:
-          "Email, OTP and new password are required"
+          "Email, OTP and new password are required",
       });
     }
 
     if (
       finalPassword.length < 6
     ) {
-
       return res.status(400).json({
+        success: false,
         message:
-          "Password must be at least 6 characters long"
+          "Password must be at least 6 characters long",
       });
     }
 
@@ -655,53 +662,43 @@ const resetPassword = async (req, res) => {
 
     const user =
       await User.findOne({
-        email: normalizedEmail
+        email: normalizedEmail,
       });
 
     if (!user) {
-
       return res.status(400).json({
+        success: false,
         message:
-          "Invalid OTP or email"
+          "Invalid OTP or email",
       });
     }
-
-    // ----------------------------------------------
-    // MAXIMUM 5 ATTEMPTS
-    // ----------------------------------------------
 
     if (
       (user.resetOtpAttempts || 0) >= 5
     ) {
-
       return res.status(429).json({
+        success: false,
         message:
-          "Too many OTP attempts. Please request a new OTP."
+          "Too many OTP attempts. Please request a new OTP.",
       });
     }
-
-    // ----------------------------------------------
-    // CHECK OTP EXISTS
-    // ----------------------------------------------
 
     if (
       !user.resetOtp ||
       !user.resetOtpExpires
     ) {
-
       return res.status(400).json({
+        success: false,
         message:
-          "OTP is invalid or has expired. Please request a new OTP."
+          "OTP is invalid or has expired. Please request a new OTP.",
       });
     }
 
-    // ----------------------------------------------
-    // CHECK EXPIRY
-    // ----------------------------------------------
-
     if (
       new Date() >
-      new Date(user.resetOtpExpires)
+      new Date(
+        user.resetOtpExpires
+      )
     ) {
 
       user.resetOtp = null;
@@ -713,21 +710,14 @@ const resetPassword = async (req, res) => {
       await user.save();
 
       return res.status(400).json({
+        success: false,
         message:
-          "OTP has expired. Please request a new OTP."
+          "OTP has expired. Please request a new OTP.",
       });
     }
 
-    // ----------------------------------------------
-    // INCREMENT ATTEMPT
-    // ----------------------------------------------
-
     user.resetOtpAttempts =
       (user.resetOtpAttempts || 0) + 1;
-
-    // ----------------------------------------------
-    // VERIFY OTP
-    // ----------------------------------------------
 
     if (
       String(user.resetOtp) !==
@@ -737,14 +727,11 @@ const resetPassword = async (req, res) => {
       await user.save();
 
       return res.status(400).json({
+        success: false,
         message:
-          "Invalid OTP"
+          "Invalid OTP",
       });
     }
-
-    // ----------------------------------------------
-    // HASH NEW PASSWORD
-    // ----------------------------------------------
 
     const hashedPassword =
       await bcrypt.hash(
@@ -755,10 +742,6 @@ const resetPassword = async (req, res) => {
     user.password =
       hashedPassword;
 
-    // ----------------------------------------------
-    // CLEAR OTP
-    // ----------------------------------------------
-
     user.resetOtp = null;
 
     user.resetOtpExpires = null;
@@ -767,26 +750,23 @@ const resetPassword = async (req, res) => {
 
     await user.save();
 
-    // ----------------------------------------------
-    // GENERATE NEW TOKEN
-    // ----------------------------------------------
-
+    // Automatically login after reset
     const token =
       generateToken(user);
 
     return res.json({
+      success: true,
 
       message:
-        "Password reset successful. You can now login.",
+        "Password reset successful",
 
       token,
 
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
-      }
-
+        email: user.email,
+      },
     });
 
   } catch (error) {
@@ -797,13 +777,11 @@ const resetPassword = async (req, res) => {
     );
 
     return res.status(500).json({
-
+      success: false,
       message:
         "Password reset failed",
-
       error:
-        error.message
-
+        error.message,
     });
   }
 };
@@ -812,63 +790,64 @@ const resetPassword = async (req, res) => {
 // GOOGLE LOGIN
 // ======================================================
 
-const googleLogin = async (req, res) => {
-
+const googleLogin = async (
+  req,
+  res
+) => {
   try {
 
     const {
-      credential
+      credential,
     } = req.body;
 
     if (!credential) {
-
       return res.status(400).json({
+        success: false,
         message:
-          "Google credential is required"
+          "Google credential is required",
       });
     }
 
-    if (!process.env.GOOGLE_CLIENT_ID) {
-
+    if (
+      !process.env.GOOGLE_CLIENT_ID
+    ) {
       return res.status(500).json({
+        success: false,
         message:
-          "GOOGLE_CLIENT_ID is not configured"
+          "GOOGLE_CLIENT_ID is not configured",
       });
     }
 
     const ticket =
       await googleClient.verifyIdToken({
-
-        idToken:
-          credential,
+        idToken: credential,
 
         audience:
-          process.env.GOOGLE_CLIENT_ID
-
+          process.env.GOOGLE_CLIENT_ID,
       });
 
     const payload =
       ticket.getPayload();
 
     if (!payload) {
-
       return res.status(401).json({
+        success: false,
         message:
-          "Invalid Google credential"
+          "Invalid Google credential",
       });
     }
 
     const {
       sub: googleId,
       email,
-      name
+      name,
     } = payload;
 
     if (!email) {
-
       return res.status(400).json({
+        success: false,
         message:
-          "Google account email could not be found"
+          "Google account email could not be found",
       });
     }
 
@@ -877,18 +856,13 @@ const googleLogin = async (req, res) => {
 
     let user =
       await User.findOne({
-        email: normalizedEmail
+        email: normalizedEmail,
       });
-
-    // ----------------------------------------------
-    // CREATE GOOGLE USER
-    // ----------------------------------------------
 
     if (!user) {
 
       user =
         await User.create({
-
           name:
             name || "Google User",
 
@@ -898,17 +872,14 @@ const googleLogin = async (req, res) => {
           googleId,
 
           password:
-            undefined
-
+            undefined,
         });
 
     } else {
 
-      // --------------------------------------------
-      // ADD GOOGLE ID TO EXISTING ACCOUNT
-      // --------------------------------------------
-
-      if (!user.googleId) {
+      if (
+        !user.googleId
+      ) {
 
         user.googleId =
           googleId;
@@ -920,7 +891,13 @@ const googleLogin = async (req, res) => {
     const token =
       generateToken(user);
 
+    // IMPORTANT:
+    // Return success directly.
+    // Frontend should immediately login
+    // without showing another popup/message.
+
     return res.json({
+      success: true,
 
       message:
         "Google login successful",
@@ -928,18 +905,10 @@ const googleLogin = async (req, res) => {
       token,
 
       user: {
-
-        id:
-          user._id,
-
-        name:
-          user.name,
-
-        email:
-          user.email
-
-      }
-
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
 
   } catch (error) {
@@ -950,13 +919,11 @@ const googleLogin = async (req, res) => {
     );
 
     return res.status(401).json({
-
+      success: false,
       message:
         "Google login failed",
-
       error:
-        error.message
-
+        error.message,
     });
   }
 };
@@ -966,15 +933,9 @@ const googleLogin = async (req, res) => {
 // ======================================================
 
 module.exports = {
-
   register,
-
   login,
-
   forgotPassword,
-
   resetPassword,
-
-  googleLogin
-
+  googleLogin,
 };

@@ -14,36 +14,30 @@ import "./Login.css";
 
 function Login({
   onLogin,
-  onRegisterClick,
-  onHomeClick
+  onRegisterClick
 }) {
 
-  // =====================================================
+  // =========================================================
   // LOGIN STATES
-  // =====================================================
+  // =========================================================
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [rememberMe, setRememberMe] = useState(false);
-
   const [showPassword, setShowPassword] = useState(false);
 
   const [error, setError] = useState("");
-
-  const [loginSuccess, setLoginSuccess] = useState("");
-
   const [loading, setLoading] = useState(false);
 
 
-  // =====================================================
+  // =========================================================
   // FORGOT PASSWORD STATES
-  // =====================================================
+  // =========================================================
 
   const [showForgot, setShowForgot] = useState(false);
 
   const [forgotEmail, setForgotEmail] = useState("");
-
   const [forgotOtp, setForgotOtp] = useState("");
 
   const [forgotNewPassword, setForgotNewPassword] =
@@ -74,9 +68,9 @@ function Login({
     useState(false);
 
 
-  // =====================================================
+  // =========================================================
   // LOAD REMEMBERED EMAIL
-  // =====================================================
+  // =========================================================
 
   useEffect(() => {
 
@@ -86,7 +80,6 @@ function Login({
     if (savedEmail) {
 
       setEmail(savedEmail);
-
       setRememberMe(true);
 
     }
@@ -94,17 +87,74 @@ function Login({
   }, []);
 
 
-  // =====================================================
+  // =========================================================
+  // SAVE LOGIN SESSION
+  // =========================================================
+
+  const saveLoginSession = (data, userEmail) => {
+
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+
+    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
+
+
+    if (rememberMe) {
+
+      localStorage.setItem(
+        "token",
+        data.token
+      );
+
+      if (data.user) {
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+
+      }
+
+      localStorage.setItem(
+        "rememberedEmail",
+        userEmail || data.user?.email || ""
+      );
+
+    } else {
+
+      sessionStorage.setItem(
+        "token",
+        data.token
+      );
+
+      if (data.user) {
+
+        sessionStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+
+      }
+
+      localStorage.removeItem(
+        "rememberedEmail"
+      );
+
+    }
+
+  };
+
+
+  // =========================================================
   // NORMAL LOGIN
-  // =====================================================
+  // =========================================================
 
   const handleLogin = async (e) => {
 
     e.preventDefault();
 
     setError("");
-    setLoginSuccess("");
-
 
     if (!email.trim()) {
 
@@ -113,8 +163,8 @@ function Login({
       );
 
       return;
-    }
 
+    }
 
     if (!password.trim()) {
 
@@ -123,13 +173,13 @@ function Login({
       );
 
       return;
+
     }
 
 
     try {
 
       setLoading(true);
-
 
       const data =
         await loginUser(
@@ -143,72 +193,11 @@ function Login({
         data?.token
       ) {
 
-        // -----------------------------------------------
-        // CLEAR OLD AUTH
-        // -----------------------------------------------
+        saveLoginSession(
+          data,
+          email.trim()
+        );
 
-        localStorage.removeItem("token");
-        sessionStorage.removeItem("token");
-
-        localStorage.removeItem("user");
-        sessionStorage.removeItem("user");
-
-
-        // -----------------------------------------------
-        // REMEMBER ME
-        // -----------------------------------------------
-
-        if (rememberMe) {
-
-          localStorage.setItem(
-            "token",
-            data.token
-          );
-
-
-          if (data.user) {
-
-            localStorage.setItem(
-              "user",
-              JSON.stringify(data.user)
-            );
-
-          }
-
-
-          localStorage.setItem(
-            "rememberedEmail",
-            email.trim()
-          );
-
-        } else {
-
-          sessionStorage.setItem(
-            "token",
-            data.token
-          );
-
-
-          if (data.user) {
-
-            sessionStorage.setItem(
-              "user",
-              JSON.stringify(data.user)
-            );
-
-          }
-
-
-          localStorage.removeItem(
-            "rememberedEmail"
-          );
-
-        }
-
-
-        // -----------------------------------------------
-        // LOGIN SUCCESS
-        // -----------------------------------------------
 
         if (onLogin) {
 
@@ -232,7 +221,6 @@ function Login({
         err
       );
 
-
       setError(
         err?.message ||
         "Unable to login. Please try again."
@@ -247,9 +235,9 @@ function Login({
   };
 
 
-  // =====================================================
+  // =========================================================
   // GOOGLE LOGIN
-  // =====================================================
+  // =========================================================
 
   const handleGoogleLogin = async (
     credentialResponse
@@ -258,7 +246,6 @@ function Login({
     try {
 
       setError("");
-      setLoginSuccess("");
 
       setLoading(true);
 
@@ -284,77 +271,21 @@ function Login({
         );
 
 
+      // IMPORTANT:
+      // No Google success message.
+      // No extra popup.
+      // Directly login to the application.
+
       if (
         data?.success &&
         data?.token
       ) {
 
-        // -----------------------------------------------
-        // CLEAR OLD AUTH
-        // -----------------------------------------------
+        saveLoginSession(
+          data,
+          data.user?.email
+        );
 
-        localStorage.removeItem("token");
-        sessionStorage.removeItem("token");
-
-        localStorage.removeItem("user");
-        sessionStorage.removeItem("user");
-
-
-        // -----------------------------------------------
-        // SAVE AUTH
-        // -----------------------------------------------
-
-        if (rememberMe) {
-
-          localStorage.setItem(
-            "token",
-            data.token
-          );
-
-
-          if (data.user) {
-
-            localStorage.setItem(
-              "user",
-              JSON.stringify(data.user)
-            );
-
-          }
-
-
-          localStorage.setItem(
-            "rememberedEmail",
-            data.user?.email || ""
-          );
-
-        } else {
-
-          sessionStorage.setItem(
-            "token",
-            data.token
-          );
-
-
-          if (data.user) {
-
-            sessionStorage.setItem(
-              "user",
-              JSON.stringify(data.user)
-            );
-
-          }
-
-
-          localStorage.removeItem(
-            "rememberedEmail"
-          );
-
-        }
-
-
-        // -----------------------------------------------
-        // LOGIN
-        // -----------------------------------------------
 
         if (onLogin) {
 
@@ -362,14 +293,15 @@ function Login({
 
         }
 
-      } else {
-
-        setError(
-          data?.message ||
-          "Google login failed."
-        );
+        return;
 
       }
+
+
+      setError(
+        data?.message ||
+        "Google login failed."
+      );
 
     } catch (err) {
 
@@ -377,7 +309,6 @@ function Login({
         "GOOGLE LOGIN ERROR:",
         err
       );
-
 
       setError(
         err?.message ||
@@ -393,9 +324,9 @@ function Login({
   };
 
 
-  // =====================================================
+  // =========================================================
   // GOOGLE LOGIN ERROR
-  // =====================================================
+  // =========================================================
 
   const handleGoogleError = () => {
 
@@ -406,14 +337,13 @@ function Login({
   };
 
 
-  // =====================================================
+  // =========================================================
   // SEND OTP
-  // =====================================================
+  // =========================================================
 
   const sendOtp = async () => {
 
     setForgotMessage("");
-
     setForgotSuccess(false);
 
 
@@ -453,15 +383,14 @@ function Login({
       }
 
 
-      // -----------------------------------------------
-      // OTP SENT
-      // -----------------------------------------------
+      // =====================================================
+      // OTP SUCCESS
+      // =====================================================
 
       setOtpSent(true);
 
       setForgotSuccess(true);
 
-      // Only one clean success text.
       setForgotMessage(
         "OTP sent successfully"
       );
@@ -476,15 +405,12 @@ function Login({
         err
       );
 
-
       setForgotSuccess(false);
-
 
       setForgotMessage(
         err?.message ||
         "Unable to send OTP. Please try again."
       );
-
 
       return false;
 
@@ -497,9 +423,9 @@ function Login({
   };
 
 
-  // =====================================================
-  // FORGOT PASSWORD FORM
-  // =====================================================
+  // =========================================================
+  // SEND OTP FORM
+  // =========================================================
 
   const handleForgotPassword = async (e) => {
 
@@ -510,22 +436,19 @@ function Login({
   };
 
 
-  // =====================================================
+  // =========================================================
   // RESET PASSWORD
-  // =====================================================
+  // =========================================================
 
   const handleResetPassword = async (e) => {
 
     e.preventDefault();
 
-
     setForgotMessage("");
     setForgotSuccess(false);
 
 
-    // -----------------------------------------------
     // EMAIL
-    // -----------------------------------------------
 
     if (!forgotEmail.trim()) {
 
@@ -538,9 +461,7 @@ function Login({
     }
 
 
-    // -----------------------------------------------
     // OTP
-    // -----------------------------------------------
 
     if (!forgotOtp.trim()) {
 
@@ -553,7 +474,9 @@ function Login({
     }
 
 
-    if (forgotOtp.trim().length !== 6) {
+    if (
+      forgotOtp.trim().length !== 6
+    ) {
 
       setForgotMessage(
         "OTP must be 6 digits."
@@ -564,9 +487,7 @@ function Login({
     }
 
 
-    // -----------------------------------------------
     // NEW PASSWORD
-    // -----------------------------------------------
 
     if (!forgotNewPassword) {
 
@@ -579,7 +500,9 @@ function Login({
     }
 
 
-    if (forgotNewPassword.length < 6) {
+    if (
+      forgotNewPassword.length < 6
+    ) {
 
       setForgotMessage(
         "Password must be at least 6 characters."
@@ -590,9 +513,7 @@ function Login({
     }
 
 
-    // -----------------------------------------------
     // CONFIRM PASSWORD
-    // -----------------------------------------------
 
     if (!forgotConfirmPassword) {
 
@@ -619,9 +540,9 @@ function Login({
     }
 
 
-    // =================================================
-    // API RESET
-    // =================================================
+    // =====================================================
+    // API
+    // =====================================================
 
     try {
 
@@ -638,6 +559,8 @@ function Login({
 
       if (!data?.success) {
 
+        setForgotSuccess(false);
+
         setForgotMessage(
           data?.message ||
           "Unable to reset password."
@@ -648,54 +571,73 @@ function Login({
       }
 
 
-      // =================================================
-      // PASSWORD RESET SUCCESS
-      // =================================================
+      // =====================================================
+      // RESET SUCCESS
+      // =====================================================
 
-      // Reset all forgot-password fields.
+      setForgotSuccess(true);
 
-      setForgotOtp("");
-
-      setForgotNewPassword("");
-
-      setForgotConfirmPassword("");
-
-      setForgotSuccess(false);
-
-      setForgotMessage("");
-
-
-      // Put the reset email into normal login.
-
-      setEmail(
-        forgotEmail.trim()
+      setForgotMessage(
+        "Password reset successful. Logging you in..."
       );
 
 
-      setPassword("");
+      // =====================================================
+      // DIRECT LOGIN
+      // =====================================================
+
+      if (
+        data?.token
+      ) {
+
+        saveLoginSession(
+          data,
+          forgotEmail.trim()
+        );
 
 
-      // Go back to normal login.
-
-      setShowForgot(false);
-
-      setOtpSent(false);
+        setForgotOtp("");
+        setForgotNewPassword("");
+        setForgotConfirmPassword("");
 
 
-      // Show clean green success message on login page.
+        if (onLogin) {
 
-      setLoginSuccess(
+          onLogin(data.token);
+
+        }
+
+        return;
+
+      }
+
+
+      // If backend doesn't return token,
+      // return to login screen instead.
+
+      setForgotSuccess(false);
+
+      setForgotMessage(
         "Password reset successful. Please login with your new password."
       );
 
 
-      // Clear old authentication.
+      setTimeout(() => {
 
-      localStorage.removeItem("token");
-      sessionStorage.removeItem("token");
+        setEmail(
+          forgotEmail.trim()
+        );
 
-      localStorage.removeItem("user");
-      sessionStorage.removeItem("user");
+        setShowForgot(false);
+
+        setForgotOtp("");
+        setForgotNewPassword("");
+        setForgotConfirmPassword("");
+        setForgotMessage("");
+        setForgotSuccess(false);
+        setOtpSent(false);
+
+      }, 1200);
 
 
     } catch (err) {
@@ -705,9 +647,7 @@ function Login({
         err
       );
 
-
       setForgotSuccess(false);
-
 
       setForgotMessage(
         err?.message ||
@@ -723,9 +663,9 @@ function Login({
   };
 
 
-  // =====================================================
+  // =========================================================
   // REGISTER
-  // =====================================================
+  // =========================================================
 
   const handleRegister = () => {
 
@@ -738,65 +678,34 @@ function Login({
   };
 
 
-  // =====================================================
-  // HOME
-  // =====================================================
-
-  const handleHome = () => {
-
-    if (onHomeClick) {
-
-      onHomeClick();
-
-      return;
-
-    }
-
-
-    // If parent doesn't provide Home handler,
-    // simply go back.
-
-    if (window.history.length > 1) {
-
-      window.history.back();
-
-    }
-
-  };
-
-
-  // =====================================================
+  // =========================================================
   // BACK TO LOGIN
-  // =====================================================
+  // =========================================================
 
   const handleBackToLogin = () => {
 
     setShowForgot(false);
 
     setForgotEmail("");
-
     setForgotOtp("");
 
     setForgotNewPassword("");
-
     setForgotConfirmPassword("");
 
     setForgotMessage("");
-
     setForgotSuccess(false);
 
     setOtpSent(false);
 
     setShowForgotNewPassword(false);
-
     setShowForgotConfirmPassword(false);
 
   };
 
 
-  // =====================================================
-  // FORGOT EMAIL CHANGE
-  // =====================================================
+  // =========================================================
+  // CHANGE FORGOT EMAIL
+  // =========================================================
 
   const handleForgotEmailChange = (e) => {
 
@@ -804,54 +713,22 @@ function Login({
       e.target.value
     );
 
-
-    // Changing email starts a fresh OTP flow.
-
     setOtpSent(false);
 
     setForgotOtp("");
 
     setForgotNewPassword("");
-
     setForgotConfirmPassword("");
 
     setForgotMessage("");
-
     setForgotSuccess(false);
 
   };
 
 
-  // =====================================================
-  // OPEN FORGOT PASSWORD
-  // =====================================================
-
-  const openForgotPassword = () => {
-
-    setForgotEmail(
-      email.trim()
-    );
-
-    setShowForgot(true);
-
-    setForgotMessage("");
-
-    setForgotSuccess(false);
-
-    setOtpSent(false);
-
-    setForgotOtp("");
-
-    setForgotNewPassword("");
-
-    setForgotConfirmPassword("");
-
-  };
-
-
-  // =====================================================
+  // =========================================================
   // FORGOT PASSWORD SCREEN
-  // =====================================================
+  // =========================================================
 
   if (showForgot) {
 
@@ -859,27 +736,46 @@ function Login({
 
       <div className="login-page">
 
-        {/* BACKGROUND */}
-
         <div className="login-background">
 
-          <div className="abstract-shape shape-top"></div>
+          <div className="bg-grid"></div>
 
-          <div className="abstract-shape shape-bottom"></div>
+          <div className="blue-glow glow-one"></div>
+          <div className="blue-glow glow-two"></div>
+          <div className="blue-glow glow-three"></div>
+
+          <div className="lightning-line"></div>
+          <div className="lightning-line lightning-two"></div>
+
+          <div className="bg-circle circle-one"></div>
+          <div className="bg-circle circle-two"></div>
 
         </div>
 
 
-        {/* HOME */}
+        {/* BRAND */}
 
-        <button
-          type="button"
-          className="home-button"
-          onClick={handleHome}
-        >
-          <span>‹</span>
-          <span>Home</span>
-        </button>
+        <div className="brand">
+
+          <div className="brand-icon">
+
+            <span>₹</span>
+
+          </div>
+
+          <div className="brand-info">
+
+            <h2>
+              Expense <span>Tracker</span>
+            </h2>
+
+            <p>
+              Track&nbsp; • &nbsp;Plan&nbsp; • &nbsp;Grow
+            </p>
+
+          </div>
+
+        </div>
 
 
         {/* FORGOT CONTENT */}
@@ -890,14 +786,20 @@ function Login({
 
             <div className="login-card">
 
+              <div className="card-glow"></div>
 
-              {/* LOGO */}
+
+              {/* CARD BRAND */}
 
               <div className="card-brand">
 
                 <div className="small-logo">
-                  R
+                  ₹
                 </div>
+
+                <h2>
+                  Expense <span>Tracker</span>
+                </h2>
 
               </div>
 
@@ -911,44 +813,49 @@ function Login({
                 </h1>
 
                 <p>
+
                   {otpSent
                     ? "Enter the OTP sent to your email and create a new password."
                     : "Enter your email and we'll send you a secure OTP."
                   }
+
                 </p>
 
               </div>
 
 
               {/* =================================================
-                  SUCCESS
+                  SUCCESS MESSAGE
+                  ONLY ONE SUCCESS MESSAGE
               ================================================= */}
 
               {forgotSuccess && (
 
                 <div className="reset-success">
 
-                  <div className="success-content">
+                  <strong>
+                    ✓ OTP Sent Successfully
+                  </strong>
 
-                    <strong>
-                      OTP Sent Successfully
-                    </strong>
-
-                  </div>
+                  <span>
+                    {forgotMessage}
+                  </span>
 
                 </div>
 
               )}
 
 
-              {/* =================================================
-                  ERROR
-              ================================================= */}
+              {/* ERROR */}
 
               {forgotMessage &&
                 !forgotSuccess && (
 
                   <div className="login-error">
+
+                    <span className="error-icon">
+                      !
+                    </span>
 
                     <span>
                       {forgotMessage}
@@ -960,15 +867,13 @@ function Login({
 
 
               {/* =================================================
-                  STEP 1 — EMAIL
+                  STEP 1
               ================================================= */}
 
               {!otpSent && (
 
                 <form
-                  onSubmit={
-                    handleForgotPassword
-                  }
+                  onSubmit={handleForgotPassword}
                   className="login-form"
                 >
 
@@ -979,6 +884,10 @@ function Login({
                     </label>
 
                     <div className="input-wrapper">
+
+                      <span className="input-icon">
+                        ✉
+                      </span>
 
                       <input
                         type="email"
@@ -999,35 +908,21 @@ function Login({
                   <button
                     type="submit"
                     className="login-button"
-                    disabled={
-                      forgotLoading
-                    }
+                    disabled={forgotLoading}
                   >
 
                     {forgotLoading ? (
 
                       <>
-
                         <span className="spinner"></span>
-
-                        <span>
-                          Sending OTP...
-                        </span>
-
+                        <span>Sending OTP...</span>
                       </>
 
                     ) : (
 
                       <>
-
-                        <span>
-                          Send OTP
-                        </span>
-
-                        <span className="arrow">
-                          →
-                        </span>
-
+                        <span>Send OTP</span>
+                        <span className="arrow">→</span>
                       </>
 
                     )}
@@ -1040,15 +935,13 @@ function Login({
 
 
               {/* =================================================
-                  STEP 2 — OTP + PASSWORD
+                  STEP 2
               ================================================= */}
 
               {otpSent && (
 
                 <form
-                  onSubmit={
-                    handleResetPassword
-                  }
+                  onSubmit={handleResetPassword}
                   className="login-form"
                 >
 
@@ -1061,6 +954,10 @@ function Login({
                     </label>
 
                     <div className="input-wrapper">
+
+                      <span className="input-icon">
+                        ✉
+                      </span>
 
                       <input
                         type="email"
@@ -1086,13 +983,16 @@ function Login({
                       Enter OTP
                     </label>
 
-                    <div className="input-wrapper otp-wrapper">
+                    <div className="input-wrapper">
+
+                      <span className="input-icon">
+                        #
+                      </span>
 
                       <input
                         className="otp-input"
                         type="text"
                         inputMode="numeric"
-                        pattern="[0-9]*"
                         maxLength={6}
                         placeholder="Enter 6-digit OTP"
                         value={forgotOtp}
@@ -1106,7 +1006,6 @@ function Login({
                           setForgotOtp(value);
 
                           setForgotMessage("");
-
                           setForgotSuccess(false);
 
                         }}
@@ -1136,9 +1035,7 @@ function Login({
                             : "password"
                         }
                         placeholder="Enter new password"
-                        value={
-                          forgotNewPassword
-                        }
+                        value={forgotNewPassword}
                         onChange={(e) => {
 
                           setForgotNewPassword(
@@ -1146,16 +1043,12 @@ function Login({
                           );
 
                           setForgotMessage("");
-
-                          setForgotSuccess(
-                            false
-                          );
+                          setForgotSuccess(false);
 
                         }}
                         autoComplete="new-password"
                         required
                       />
-
 
                       <button
                         type="button"
@@ -1165,16 +1058,11 @@ function Login({
                             !showForgotNewPassword
                           )
                         }
-                        aria-label={
-                          showForgotNewPassword
-                            ? "Hide password"
-                            : "Show password"
-                        }
                       >
 
                         {showForgotNewPassword
-                          ? "Hide"
-                          : "Show"}
+                          ? "◉"
+                          : "◌"}
 
                       </button>
 
@@ -1210,16 +1098,12 @@ function Login({
                           );
 
                           setForgotMessage("");
-
-                          setForgotSuccess(
-                            false
-                          );
+                          setForgotSuccess(false);
 
                         }}
                         autoComplete="new-password"
                         required
                       />
-
 
                       <button
                         type="button"
@@ -1229,16 +1113,11 @@ function Login({
                             !showForgotConfirmPassword
                           )
                         }
-                        aria-label={
-                          showForgotConfirmPassword
-                            ? "Hide password"
-                            : "Show password"
-                        }
                       >
 
                         {showForgotConfirmPassword
-                          ? "Hide"
-                          : "Show"}
+                          ? "◉"
+                          : "◌"}
 
                       </button>
 
@@ -1247,32 +1126,26 @@ function Login({
                   </div>
 
 
-                  {/* RESET */}
+                  {/* RESET BUTTON */}
 
                   <button
                     type="submit"
                     className="login-button"
-                    disabled={
-                      resetLoading
-                    }
+                    disabled={resetLoading}
                   >
 
                     {resetLoading ? (
 
                       <>
-
                         <span className="spinner"></span>
-
                         <span>
                           Resetting Password...
                         </span>
-
                       </>
 
                     ) : (
 
                       <>
-
                         <span>
                           Reset Password
                         </span>
@@ -1280,7 +1153,6 @@ function Login({
                         <span className="arrow">
                           →
                         </span>
-
                       </>
 
                     )}
@@ -1292,11 +1164,9 @@ function Login({
 
                   <button
                     type="button"
-                    className="resend-button"
+                    className="resend-otp-button"
                     onClick={sendOtp}
-                    disabled={
-                      forgotLoading
-                    }
+                    disabled={forgotLoading}
                   >
 
                     {forgotLoading
@@ -1311,9 +1181,7 @@ function Login({
               )}
 
 
-              {/* =================================================
-                  BACK TO LOGIN
-              ================================================= */}
+              {/* BACK LOGIN */}
 
               <div className="register-text">
 
@@ -1323,12 +1191,21 @@ function Login({
 
                 <button
                   type="button"
-                  onClick={
-                    handleBackToLogin
-                  }
+                  onClick={handleBackToLogin}
                 >
                   Back to Login
                 </button>
+
+              </div>
+
+
+              {/* SECURITY */}
+
+              <div className="secure-login">
+
+                <span>
+                  Your OTP is secure and expires after 10 minutes
+                </span>
 
               </div>
 
@@ -1338,6 +1215,21 @@ function Login({
 
         </main>
 
+
+        {/* CURTAINS */}
+
+        <div className="curtain curtain-left">
+
+          <div className="curtain-folds"></div>
+
+        </div>
+
+        <div className="curtain curtain-right">
+
+          <div className="curtain-folds"></div>
+
+        </div>
+
       </div>
 
     );
@@ -1345,68 +1237,249 @@ function Login({
   }
 
 
-  // =====================================================
+  // =========================================================
   // NORMAL LOGIN SCREEN
-  // =====================================================
+  // =========================================================
 
   return (
 
     <div className="login-page">
 
-      {/* =================================================
-          BACKGROUND
-      ================================================= */}
-
       <div className="login-background">
 
-        <div className="abstract-shape shape-top"></div>
+        <div className="bg-grid"></div>
 
-        <div className="abstract-shape shape-bottom"></div>
+        <div className="blue-glow glow-one"></div>
+        <div className="blue-glow glow-two"></div>
+        <div className="blue-glow glow-three"></div>
+
+        <div className="lightning-line"></div>
+        <div className="lightning-line lightning-two"></div>
+
+        <div className="bg-circle circle-one"></div>
+        <div className="bg-circle circle-two"></div>
 
       </div>
 
 
-      {/* =================================================
-          HOME
-      ================================================= */}
+      {/* BRAND */}
 
-      <button
-        type="button"
-        className="home-button"
-        onClick={handleHome}
-      >
-        <span>‹</span>
-        <span>Home</span>
-      </button>
+      <div className="brand">
 
+        <div className="brand-icon">
 
-      {/* =================================================
-          CONTENT
-      ================================================= */}
+          <span>₹</span>
+
+        </div>
+
+        <div className="brand-info">
+
+          <h2>
+            Expense <span>Tracker</span>
+          </h2>
+
+          <p>
+            Track&nbsp; • &nbsp;Plan&nbsp; • &nbsp;Grow
+          </p>
+
+        </div>
+
+      </div>
+
 
       <main className="login-content">
 
-        <section className="login-section">
 
-          <div className="login-card">
+        {/* LEFT */}
+
+        <section className="login-intro">
+
+          <div className="intro-content">
+
+            <div className="intro-badge">
+
+              <span className="badge-dot"></span>
+
+              SMART FINANCE MANAGEMENT
+
+            </div>
 
 
-            {/* =================================================
-                LOGO
-            ================================================= */}
+            <h1>
 
-            <div className="card-brand">
+              Take Control of<br />
 
-              <div className="small-logo">
-                R
+              Your <span>Finances</span>
+
+            </h1>
+
+
+            <h3>
+              Simple. Secure. Powerful.
+            </h3>
+
+
+            <p className="intro-description">
+
+              Track your expenses, manage your budget
+              and build a better financial future —
+              all in one place.
+
+            </p>
+
+
+            <div className="feature-row">
+
+              <div className="feature">
+
+                <div className="feature-icon">
+                  <span>↗</span>
+                </div>
+
+                <div className="feature-text">
+
+                  <strong>
+                    Track
+                  </strong>
+
+                  <span>
+                    Expenses
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              <div className="feature">
+
+                <div className="feature-icon">
+                  <span>◇</span>
+                </div>
+
+                <div className="feature-text">
+
+                  <strong>
+                    Set
+                  </strong>
+
+                  <span>
+                    Budgets
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              <div className="feature">
+
+                <div className="feature-icon">
+                  <span>◎</span>
+                </div>
+
+                <div className="feature-text">
+
+                  <strong>
+                    Reach
+                  </strong>
+
+                  <span>
+                    Your Goals
+                  </span>
+
+                </div>
+
               </div>
 
             </div>
 
 
-            {/* =================================================
-                HEADING
-            ================================================= */}
+            <div className="intro-stats">
+
+              <div className="stat-item">
+
+                <strong>
+                  100%
+                </strong>
+
+                <span>
+                  Secure
+                </span>
+
+              </div>
+
+              <div className="stat-line"></div>
+
+              <div className="stat-item">
+
+                <strong>
+                  24/7
+                </strong>
+
+                <span>
+                  Accessible
+                </span>
+
+              </div>
+
+              <div className="stat-line"></div>
+
+              <div className="stat-item">
+
+                <strong>
+                  Smart
+                </strong>
+
+                <span>
+                  Tracking
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div className="money-text">
+
+            <span>
+              Better Money
+            </span>
+
+            <span>
+              Bigger Dreams
+            </span>
+
+            <div className="money-line"></div>
+
+          </div>
+
+        </section>
+
+
+        {/* LOGIN CARD */}
+
+        <section className="login-section">
+
+          <div className="login-card">
+
+            <div className="card-glow"></div>
+
+
+            <div className="card-brand">
+
+              <div className="small-logo">
+                ₹
+              </div>
+
+              <h2>
+                Expense <span>Tracker</span>
+              </h2>
+
+            </div>
+
 
             <div className="login-heading">
 
@@ -1421,30 +1494,13 @@ function Login({
             </div>
 
 
-            {/* =================================================
-                LOGIN SUCCESS
-            ================================================= */}
-
-            {loginSuccess && (
-
-              <div className="login-success">
-
-                <span>
-                  {loginSuccess}
-                </span>
-
-              </div>
-
-            )}
-
-
-            {/* =================================================
-                ERROR
-            ================================================= */}
-
             {error && (
 
               <div className="login-error">
+
+                <span className="error-icon">
+                  !
+                </span>
 
                 <span>
                   {error}
@@ -1455,25 +1511,24 @@ function Login({
             )}
 
 
-            {/* =================================================
-                LOGIN FORM
-            ================================================= */}
-
             <form
               onSubmit={handleLogin}
               className="login-form"
             >
-
 
               {/* EMAIL */}
 
               <div className="input-group">
 
                 <label>
-                  Email
+                  Email Address
                 </label>
 
                 <div className="input-wrapper">
+
+                  <span className="input-icon">
+                    ✉
+                  </span>
 
                   <input
                     type="email"
@@ -1481,13 +1536,8 @@ function Login({
                     value={email}
                     onChange={(e) => {
 
-                      setEmail(
-                        e.target.value
-                      );
-
+                      setEmail(e.target.value);
                       setError("");
-
-                      setLoginSuccess("");
 
                     }}
                     autoComplete="email"
@@ -1509,6 +1559,10 @@ function Login({
 
                 <div className="input-wrapper">
 
+                  <span className="input-icon">
+                    🔒
+                  </span>
+
                   <input
                     type={
                       showPassword
@@ -1525,13 +1579,10 @@ function Login({
 
                       setError("");
 
-                      setLoginSuccess("");
-
                     }}
                     autoComplete="current-password"
                     required
                   />
-
 
                   <button
                     type="button"
@@ -1541,16 +1592,11 @@ function Login({
                         !showPassword
                       )
                     }
-                    aria-label={
-                      showPassword
-                        ? "Hide password"
-                        : "Show password"
-                    }
                   >
 
                     {showPassword
-                      ? "Hide"
-                      : "Show"}
+                      ? "◉"
+                      : "◌"}
 
                   </button>
 
@@ -1559,9 +1605,7 @@ function Login({
               </div>
 
 
-              {/* =================================================
-                  OPTIONS
-              ================================================= */}
+              {/* OPTIONS */}
 
               <div className="login-options">
 
@@ -1569,9 +1613,7 @@ function Login({
 
                   <input
                     type="checkbox"
-                    checked={
-                      rememberMe
-                    }
+                    checked={rememberMe}
                     onChange={(e) =>
                       setRememberMe(
                         e.target.checked
@@ -1591,44 +1633,49 @@ function Login({
                 <button
                   type="button"
                   className="forgot-button"
-                  onClick={
-                    openForgotPassword
-                  }
+                  onClick={() => {
+
+                    setForgotEmail(email);
+
+                    setShowForgot(true);
+
+                    setForgotMessage("");
+
+                    setForgotSuccess(false);
+
+                    setOtpSent(false);
+
+                  }}
                 >
+
                   Forgot password?
+
                 </button>
 
               </div>
 
 
-              {/* =================================================
-                  LOGIN BUTTON
-              ================================================= */}
+              {/* LOGIN */}
 
               <button
                 type="submit"
                 className="login-button"
-                disabled={
-                  loading
-                }
+                disabled={loading}
               >
 
                 {loading ? (
 
                   <>
-
                     <span className="spinner"></span>
 
                     <span>
                       Logging in...
                     </span>
-
                   </>
 
                 ) : (
 
                   <>
-
                     <span>
                       Login
                     </span>
@@ -1636,7 +1683,6 @@ function Login({
                     <span className="arrow">
                       →
                     </span>
-
                   </>
 
                 )}
@@ -1646,16 +1692,14 @@ function Login({
             </form>
 
 
-            {/* =================================================
-                DIVIDER
-            ================================================= */}
+            {/* DIVIDER */}
 
             <div className="divider">
 
               <span></span>
 
               <p>
-                or
+                Or
               </p>
 
               <span></span>
@@ -1663,9 +1707,7 @@ function Login({
             </div>
 
 
-            {/* =================================================
-                GOOGLE LOGIN
-            ================================================= */}
+            {/* GOOGLE LOGIN */}
 
             <div className="google-button-wrapper">
 
@@ -1677,7 +1719,7 @@ function Login({
                   handleGoogleError
                 }
                 useOneTap={false}
-                theme="filled_black"
+                theme="outline"
                 size="large"
                 text="continue_with"
                 shape="rectangular"
@@ -1687,9 +1729,7 @@ function Login({
             </div>
 
 
-            {/* =================================================
-                REGISTER
-            ================================================= */}
+            {/* REGISTER */}
 
             <div className="register-text">
 
@@ -1699,12 +1739,21 @@ function Login({
 
               <button
                 type="button"
-                onClick={
-                  handleRegister
-                }
+                onClick={handleRegister}
               >
                 Register
               </button>
+
+            </div>
+
+
+            {/* SECURITY */}
+
+            <div className="secure-login">
+
+              <span>
+                Your information is encrypted and secure
+              </span>
 
             </div>
 
@@ -1713,6 +1762,38 @@ function Login({
         </section>
 
       </main>
+
+
+      {/* RESULT */}
+
+      <div className="result-text">
+
+        <span>
+          Small Steps
+        </span>
+
+        <strong>
+          Big Results
+        </strong>
+
+        <div className="result-line"></div>
+
+      </div>
+
+
+      {/* CURTAINS */}
+
+      <div className="curtain curtain-left">
+
+        <div className="curtain-folds"></div>
+
+      </div>
+
+      <div className="curtain curtain-right">
+
+        <div className="curtain-folds"></div>
+
+      </div>
 
     </div>
 

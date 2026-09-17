@@ -1,266 +1,214 @@
+import axios from "axios";
+
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:5000/api";
 
-// ========================================
-// GET AUTH TOKEN
-// ========================================
-const getToken = () => {
-  return (
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token")
-  );
-};
+// ======================================================
+// API CLIENT
+// ======================================================
 
-// ========================================
-// COMMON API REQUEST
-// ========================================
-const request = async (
-  endpoint,
-  options = {}
-) => {
-  const token = getToken();
-
-  const headers = {
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
     "Content-Type": "application/json",
-    ...options.headers,
-  };
+  },
+});
 
-  if (token) {
-    headers.Authorization =
-      `Bearer ${token}`;
-  }
+// ======================================================
+// HELPER
+// ======================================================
 
-  const response = await fetch(
-    `${API_URL}${endpoint}`,
-    {
-      ...options,
-      headers,
-    }
-  );
-
-  let data;
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error(
-      "Invalid server response"
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-      "Something went wrong"
-    );
-  }
-
-  return data;
+const handleResponse = (response) => {
+  return response.data;
 };
 
-// ========================================
-// LOGIN
-// ========================================
-export const loginUser = async (
-  email,
-  password
-) => {
-  const response = await fetch(
-    `${API_URL}/auth/login`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    }
-  );
+const handleError = (error) => {
+  const message =
+    error?.response?.data?.message ||
+    error?.message ||
+    "Something went wrong. Please try again.";
 
-  let data;
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error(
-      "Invalid server response"
-    );
-  }
-
-  console.log(
-    "BACKEND LOGIN DATA:",
-    data
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-      "Login failed"
-    );
-  }
-
-  return data;
+  throw new Error(message);
 };
 
-// ========================================
+// ======================================================
 // REGISTER
-// ========================================
+// ======================================================
+
 export const registerUser = async (
   name,
   email,
   password
 ) => {
-  return request(
-    "/auth/register",
-    {
-      method: "POST",
-      body: JSON.stringify({
+  try {
+    const response = await api.post(
+      "/auth/register",
+      {
         name,
         email,
         password,
-      }),
-    }
-  );
+      }
+    );
+
+    return handleResponse(response);
+  } catch (error) {
+    return Promise.reject(
+      new Error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Registration failed."
+      )
+    );
+  }
 };
 
-// ========================================
-// FORGOT PASSWORD
-// ========================================
-export const forgotPassword = async (
-  email
-) => {
-  return request(
-    "/auth/forgot-password",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        email,
-      }),
-    }
-  );
-};
+// ======================================================
+// LOGIN
+// ======================================================
 
-// ========================================
-// RESET PASSWORD
-// ========================================
-export const resetPassword = async (
+export const loginUser = async (
   email,
-  otp,
   password
 ) => {
-  return request(
-    "/auth/reset-password",
-    {
-      method: "POST",
-      body: JSON.stringify({
+  try {
+    const response = await api.post(
+      "/auth/login",
+      {
         email,
-        otp,
         password,
-      }),
-    }
-  );
+      }
+    );
+
+    return handleResponse(response);
+  } catch (error) {
+    return Promise.reject(
+      new Error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Login failed."
+      )
+    );
+  }
 };
 
-// ========================================
+// ======================================================
 // GOOGLE LOGIN
-// ========================================
+// ======================================================
+
 export const googleLogin = async (
   credential
 ) => {
-  return request(
-    "/auth/google",
-    {
-      method: "POST",
-      body: JSON.stringify({
+  try {
+    const response = await api.post(
+      "/auth/google",
+      {
         credential,
-      }),
-    }
-  );
+      }
+    );
+
+    return handleResponse(response);
+  } catch (error) {
+    return Promise.reject(
+      new Error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Google login failed."
+      )
+    );
+  }
 };
 
-// ========================================
-// DASHBOARD
-// ========================================
-export const getDashboard = async () => {
-  return request(
-    "/dashboard"
-  );
-};
+// ======================================================
+// FORGOT PASSWORD — SEND OTP
+// ======================================================
 
-// ========================================
-// CATEGORIES
-// ========================================
-export const getCategories = async () => {
-  return request(
-    "/categories"
-  );
-};
-
-export const createCategory = async (
-  name,
-  type
+export const forgotPassword = async (
+  email
 ) => {
-  return request(
-    "/categories",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        name,
-        type,
-      }),
-    }
-  );
+  try {
+    const response = await api.post(
+      "/auth/forgot-password",
+      {
+        email,
+      }
+    );
+
+    return handleResponse(response);
+  } catch (error) {
+    return Promise.reject(
+      new Error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to send OTP."
+      )
+    );
+  }
 };
 
-// ========================================
-// TRANSACTIONS
-// ========================================
-export const getTransactions =
-  async () => {
-    return request(
-      "/transactions"
-    );
-  };
+// ======================================================
+// RESET PASSWORD
+// ======================================================
 
-export const createTransaction =
-  async (transaction) => {
-    return request(
-      "/transactions",
+export const resetPassword = async (
+  email,
+  otp,
+  newPassword
+) => {
+  try {
+    const response = await api.post(
+      "/auth/reset-password",
       {
-        method: "POST",
-        body: JSON.stringify(
-          transaction
-        ),
+        email,
+        otp,
+        newPassword,
       }
     );
-  };
 
-export const updateTransaction =
-  async (
-    id,
-    transaction
-  ) => {
-    return request(
-      `/transactions/${id}`,
+    return handleResponse(response);
+  } catch (error) {
+    return Promise.reject(
+      new Error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to reset password."
+      )
+    );
+  }
+};
+
+// ======================================================
+// GET CURRENT USER
+// ======================================================
+
+export const getCurrentUser = async (
+  token
+) => {
+  try {
+    const response = await api.get(
+      "/auth/me",
       {
-        method: "PUT",
-        body: JSON.stringify(
-          transaction
-        ),
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+        },
       }
     );
-  };
 
-export const deleteTransaction =
-  async (id) => {
-    return request(
-      `/transactions/${id}`,
-      {
-        method: "DELETE",
-      }
+    return handleResponse(response);
+  } catch (error) {
+    return Promise.reject(
+      new Error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to get user information."
+      )
     );
-  };
+  }
+};
+
+// ======================================================
+// DEFAULT API
+// ======================================================
+
+export default api;
