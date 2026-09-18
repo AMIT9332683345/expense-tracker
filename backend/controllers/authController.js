@@ -21,7 +21,9 @@ const googleClient = new OAuth2Client(
 const generateToken = (user) => {
   return jwt.sign(
     {
-      id: user._id,
+      // IMPORTANT:
+      // authMiddleware expects decoded.userId
+      userId: user._id,
       email: user.email,
     },
     process.env.JWT_SECRET,
@@ -206,7 +208,7 @@ Expense Tracker
       method: "POST",
 
       headers: {
-        "accept": "application/json",
+        accept: "application/json",
         "api-key": process.env.BREVO_API_KEY,
         "content-type": "application/json",
         "content-length": Buffer.byteLength(
@@ -249,7 +251,6 @@ Expense Tracker
             );
 
             resolve(data);
-
           } else {
             console.error(
               "BREVO API ERROR"
@@ -599,7 +600,6 @@ const forgotPassword = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error(
       "FORGOT PASSWORD ERROR:",
       error
