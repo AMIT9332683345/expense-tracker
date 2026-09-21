@@ -1,39 +1,77 @@
-import axios from "axios";
+// ======================================================
+// API CONFIG
+// ======================================================
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:5000/api";
 
 // ======================================================
-// API CLIENT
+// GET AUTH TOKEN
 // ======================================================
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// ======================================================
-// HELPER
-// ======================================================
-
-const handleResponse = (response) => {
-  return response.data;
-};
-
-const handleError = (error) => {
-  const message =
-    error?.response?.data?.message ||
-    error?.message ||
-    "Something went wrong. Please try again.";
-
-  throw new Error(message);
+const getToken = () => {
+  return (
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token")
+  );
 };
 
 // ======================================================
-// REGISTER
+// COMMON REQUEST
+// ======================================================
+
+const request = async (endpoint, options = {}) => {
+  try {
+    const token = getToken();
+
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    const text = await response.text();
+
+    let data;
+
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error(
+        "Invalid server response. Please check the backend server."
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data?.message ||
+          data?.error ||
+          `Request failed with status ${response.status}`
+      );
+    }
+
+    return data;
+  } catch (error) {
+    console.error("API ERROR:", error);
+
+    throw new Error(
+      error?.message ||
+        "Unable to connect to the server."
+    );
+  }
+};
+
+// ======================================================
+// AUTH
 // ======================================================
 
 export const registerUser = async (
@@ -41,174 +79,179 @@ export const registerUser = async (
   email,
   password
 ) => {
-  try {
-    const response = await api.post(
-      "/auth/register",
-      {
-        name,
-        email,
-        password,
-      }
-    );
-
-    return handleResponse(response);
-  } catch (error) {
-    return Promise.reject(
-      new Error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Registration failed."
-      )
-    );
-  }
+  return request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      email,
+      password,
+    }),
+  });
 };
-
-// ======================================================
-// LOGIN
-// ======================================================
 
 export const loginUser = async (
   email,
   password
 ) => {
-  try {
-    const response = await api.post(
-      "/auth/login",
-      {
-        email,
-        password,
-      }
-    );
-
-    return handleResponse(response);
-  } catch (error) {
-    return Promise.reject(
-      new Error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Login failed."
-      )
-    );
-  }
+  return request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
 };
 
-// ======================================================
-// GOOGLE LOGIN
-// ======================================================
-
-export const googleLogin = async (
-  credential
-) => {
-  try {
-    const response = await api.post(
-      "/auth/google",
-      {
-        credential,
-      }
-    );
-
-    return handleResponse(response);
-  } catch (error) {
-    return Promise.reject(
-      new Error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Google login failed."
-      )
-    );
-  }
+export const googleLogin = async (credential) => {
+  return request("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({
+      credential,
+    }),
+  });
 };
 
-// ======================================================
-// FORGOT PASSWORD — SEND OTP
-// ======================================================
-
-export const forgotPassword = async (
-  email
-) => {
-  try {
-    const response = await api.post(
-      "/auth/forgot-password",
-      {
-        email,
-      }
-    );
-
-    return handleResponse(response);
-  } catch (error) {
-    return Promise.reject(
-      new Error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Unable to send OTP."
-      )
-    );
-  }
+export const forgotPassword = async (email) => {
+  return request("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+    }),
+  });
 };
-
-// ======================================================
-// RESET PASSWORD
-// ======================================================
 
 export const resetPassword = async (
   email,
   otp,
   newPassword
 ) => {
-  try {
-    const response = await api.post(
-      "/auth/reset-password",
-      {
-        email,
-        otp,
-        newPassword,
-      }
-    );
-
-    return handleResponse(response);
-  } catch (error) {
-    return Promise.reject(
-      new Error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Unable to reset password."
-      )
-    );
-  }
+  return request("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      otp,
+      newPassword,
+    }),
+  });
 };
 
 // ======================================================
-// GET CURRENT USER
+// DASHBOARD
 // ======================================================
 
-export const getCurrentUser = async (
-  token
+export const getDashboard = async () => {
+  return request("/dashboard", {
+    method: "GET",
+  });
+};
+
+// ======================================================
+// CATEGORIES
+// ======================================================
+
+export const getCategories = async () => {
+  return request("/categories", {
+    method: "GET",
+  });
+};
+
+export const createCategory = async (
+  name,
+  type
 ) => {
-  try {
-    const response = await api.get(
-      "/auth/me",
-      {
-        headers: {
-          Authorization:
-            `Bearer ${token}`,
-        },
-      }
-    );
+  return request("/categories", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      type,
+    }),
+  });
+};
 
-    return handleResponse(response);
-  } catch (error) {
-    return Promise.reject(
-      new Error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Unable to get user information."
-      )
-    );
-  }
+export const updateCategory = async (
+  id,
+  name,
+  type
+) => {
+  return request(`/categories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      name,
+      type,
+    }),
+  });
+};
+
+export const deleteCategory = async (id) => {
+  return request(`/categories/${id}`, {
+    method: "DELETE",
+  });
 };
 
 // ======================================================
-// DEFAULT API
+// TRANSACTIONS
 // ======================================================
+
+export const getTransactions = async () => {
+  return request("/transactions", {
+    method: "GET",
+  });
+};
+
+export const getTransaction = async (id) => {
+  return request(`/transactions/${id}`, {
+    method: "GET",
+  });
+};
+
+export const createTransaction = async (
+  transaction
+) => {
+  return request("/transactions", {
+    method: "POST",
+    body: JSON.stringify(transaction),
+  });
+};
+
+export const updateTransaction = async (
+  id,
+  transaction
+) => {
+  return request(`/transactions/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(transaction),
+  });
+};
+
+export const deleteTransaction = async (id) => {
+  return request(`/transactions/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// ======================================================
+// DEFAULT API OBJECT
+// ======================================================
+
+const api = {
+  registerUser,
+  loginUser,
+  googleLogin,
+  forgotPassword,
+  resetPassword,
+
+  getDashboard,
+
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+
+  getTransactions,
+  getTransaction,
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
+};
 
 export default api;
